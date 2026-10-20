@@ -1,0 +1,42 @@
+services:
+  db:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-teamboard}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-teamboard}
+      POSTGRES_DB: ${POSTGRES_DB:-teamboard}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-teamboard} -d ${POSTGRES_DB:-teamboard}"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  backend:
+    build: ./backend
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: postgres://${POSTGRES_USER:-teamboard}:${POSTGRES_PASSWORD:-teamboard}@db:5432/${POSTGRES_DB:-teamboard}
+      SECRET_KEY: ${SECRET_KEY:?Set SECRET_KEY in .env (a long random string)}
+      SEED_ON_STARTUP: ${SEED_ON_STARTUP:-true}
+      SEED_PASSWORD: ${SEED_PASSWORD:-changeme}
+      CORS_ORIGINS: '["http://localhost:${WEB_PORT:-8080}"]'
+    # The WebSocket hub is in-process: keep a single worker (see README) unless you add Redis pub/sub.
+    expose:
+      - "8000"
+
+  frontend:
+    build: ./frontend
+    restart: unless-stopped
+    depends_on:
+      - backend
+    ports:
+      - "${WEB_PORT:-8080}:80"
+
+volumes:
+  pgdata:

@@ -1,0 +1,481 @@
+:root {
+  --board-bg: #eef0f4;
+  --column-bg: #ffffff;
+  --column-width: 280px;
+  --card-bg: #ffffff;
+  --card-border: #e8eaef;
+  --card-shadow: 0 1px 2px rgba(16, 24, 40, 0.06), 0 1px 3px rgba(16, 24, 40, 0.08);
+  --card-shadow-hover: 0 2px 6px rgba(16, 24, 40, 0.12);
+  --header-border: #edeff3;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+  margin: 0;
+}
+
+body {
+  background: var(--board-bg);
+  -webkit-font-smoothing: antialiased;
+}
+
+.center-screen {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.center-block {
+  display: flex;
+  justify-content: center;
+  padding: 96px 0;
+}
+
+.center-block-small {
+  display: flex;
+  justify-content: center;
+  padding: 16px 0;
+}
+
+/* ---------- layout ---------- */
+
+.app-layout {
+  min-height: 100vh;
+}
+
+.app-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-bottom: 1px solid var(--header-border);
+  position: sticky;
+  top: 0;
+  z-index: 10;
+}
+
+.app-brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 18px;
+  font-weight: 700;
+  color: #1d2129;
+  letter-spacing: -0.01em;
+}
+
+.app-brand .anticon {
+  color: #2f54eb;
+}
+
+.app-brand:hover {
+  color: #1d2129;
+}
+
+.avatar-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 4px 8px;
+  border-radius: 8px;
+}
+
+.avatar-button:hover {
+  background: rgba(0, 0, 0, 0.04);
+}
+
+.header-username {
+  max-width: 160px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+@media (max-width: 600px) {
+  .header-username {
+    display: none;
+  }
+}
+
+.app-content {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+
+.page-container {
+  max-width: 1280px;
+  width: 100%;
+  margin: 0 auto;
+  padding: 24px 20px 48px;
+}
+
+.page-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 20px;
+}
+
+/* ---------- login ---------- */
+
+.login-page {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  background: linear-gradient(160deg, #eef0f4 0%, #e3e8f7 100%);
+}
+
+.login-card {
+  width: 100%;
+  max-width: 400px;
+  box-shadow: 0 8px 24px rgba(16, 24, 40, 0.08);
+}
+
+.login-brand {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  font-size: 24px;
+  color: #2f54eb;
+  margin-bottom: 4px;
+}
+
+.login-hint {
+  margin-top: 20px;
+  margin-bottom: 0;
+  text-align: center;
+  font-size: 12px;
+}
+
+/* ---------- boards page ---------- */
+
+.board-tile {
+  height: 100%;
+}
+
+.board-tile-body {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.board-tile-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-top: 4px;
+  min-height: 24px;
+}
+
+/* ---------- live indicator ---------- */
+
+.live-indicator {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: rgba(0, 0, 0, 0.45);
+  user-select: none;
+}
+
+.live-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #bfbfbf;
+}
+
+.live-indicator.is-live .live-dot {
+  background: #52c41a;
+  box-shadow: 0 0 0 3px rgba(82, 196, 26, 0.18);
+}
+
+.live-indicator.is-live {
+  color: #389e0d;
+}
+
+/* ---------- board page ---------- */
+
+.board-page {
+  display: flex;
+  flex-direction: column;
+  height: calc(100vh - 56px);
+  min-height: 0;
+}
+
+.board-header {
+  padding: 16px 20px 12px;
+  background: rgba(255, 255, 255, 0.7);
+  border-bottom: 1px solid var(--header-border);
+}
+
+.board-header-top {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.board-header-titles {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.board-title-input {
+  font-size: 20px;
+  font-weight: 600;
+  min-width: 280px;
+}
+
+.board-description {
+  max-width: 720px;
+}
+
+.board-filters {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-top: 12px;
+}
+
+.editable-text.is-editable {
+  cursor: pointer;
+  border-radius: 4px;
+  padding: 0 4px;
+  margin: 0 -4px;
+}
+
+.editable-text.is-editable:hover {
+  background: rgba(0, 0, 0, 0.05);
+}
+
+.editable-placeholder {
+  color: rgba(0, 0, 0, 0.3);
+  font-style: italic;
+}
+
+.board-canvas {
+  flex: 1;
+  display: flex;
+  align-items: flex-start;
+  padding: 16px 20px 20px;
+  overflow-x: auto;
+  overflow-y: hidden;
+  min-height: 0;
+}
+
+.board-column {
+  flex: 0 0 var(--column-width);
+  width: var(--column-width);
+  max-height: 100%;
+  display: flex;
+  flex-direction: column;
+  background: var(--column-bg);
+  border-radius: 10px;
+  border: 1px solid var(--card-border);
+  /* margin instead of flex gap so @hello-pangea/dnd measures spacing correctly */
+  margin-right: 12px;
+}
+
+.board-column.is-dragging {
+  box-shadow: 0 8px 24px rgba(16, 24, 40, 0.18);
+}
+
+.column-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 8px 6px 12px;
+}
+
+.column-title {
+  flex: 1;
+  font-weight: 600;
+  font-size: 14px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.column-header .ant-input {
+  flex: 1;
+}
+
+.column-cards {
+  flex: 1 1 auto;
+  min-height: 12px;
+  overflow-y: auto;
+  padding: 4px 8px;
+  transition: background-color 0.15s ease;
+}
+
+.column-cards.is-over {
+  background: #f5f7ff;
+}
+
+.column-footer {
+  padding: 4px 8px 8px;
+}
+
+.column-footer .ant-btn {
+  justify-content: flex-start;
+  color: rgba(0, 0, 0, 0.55);
+}
+
+.add-column {
+  flex: 0 0 var(--column-width);
+  width: var(--column-width);
+  background: rgba(255, 255, 255, 0.6);
+  border: 1px dashed #c9cdd6;
+  border-radius: 10px;
+  padding: 8px;
+}
+
+.add-column .ant-btn {
+  justify-content: flex-start;
+}
+
+/* ---------- card tile ---------- */
+
+.card-tile {
+  background: var(--card-bg);
+  border: 1px solid var(--card-border);
+  border-radius: 8px;
+  box-shadow: var(--card-shadow);
+  padding: 8px 10px;
+  margin-bottom: 8px;
+  cursor: pointer;
+  user-select: none;
+  transition: box-shadow 0.15s ease, border-color 0.15s ease;
+}
+
+.card-tile:hover {
+  box-shadow: var(--card-shadow-hover);
+  border-color: #d6dae3;
+}
+
+.card-tile.is-dragging {
+  box-shadow: 0 10px 24px rgba(16, 24, 40, 0.2);
+  transform: rotate(1.5deg);
+}
+
+.card-tile-labels {
+  display: flex;
+  flex-wrap: wrap;
+  row-gap: 4px;
+  margin-bottom: 6px;
+}
+
+.card-tile-title {
+  display: block;
+  word-break: break-word;
+  line-height: 1.4;
+}
+
+.card-tile-meta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-top: 8px;
+  min-height: 24px;
+}
+
+.card-tile-icon {
+  color: rgba(0, 0, 0, 0.45);
+  font-size: 12px;
+}
+
+.due-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 12px;
+  padding: 0 6px;
+  border-radius: 4px;
+  line-height: 20px;
+  color: rgba(0, 0, 0, 0.55);
+  background: #f2f3f5;
+}
+
+.due-badge.due-overdue {
+  color: #fff;
+  background: #f5222d;
+}
+
+.due-badge.due-soon {
+  color: #ad4e00;
+  background: #fff1d6;
+}
+
+/* ---------- card modal ---------- */
+
+.card-modal-title {
+  font-size: 20px;
+  font-weight: 600;
+  margin-right: 24px;
+}
+
+.card-modal-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+  margin-top: 16px;
+}
+
+@media (max-width: 640px) {
+  .card-modal-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.field-label {
+  display: block;
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  margin-bottom: 4px;
+}
+
+.comment-body {
+  white-space: pre-wrap;
+  word-break: break-word;
+  color: rgba(0, 0, 0, 0.85);
+}
+
+.comment-composer {
+  display: flex;
+  gap: 12px;
+  margin-top: 12px;
+}
+
+.card-modal-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.danger-menu-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
