@@ -65,8 +65,8 @@ ruff check app tests && ruff format --check app tests
 
 - Boards with members (admins see every board; others only boards they belong to); owner/admin can delete.
 - Columns: create, rename, drag to reorder, delete (cascades cards). New boards start with *To do / In progress / Review / Done*.
-- Cards: drag between/within columns, title, description, due date (overdue/soon highlighting), multiple assignees (board members only), coloured labels, comments.
-- Filters: by assignee ("assigned to me") and title search.
+- Cards: drag between/within columns, title, description, due date (overdue/soon highlighting), multiple assignees and reviewers (board members only; reviewers shown with an eye icon), coloured labels, comments. The open card is in the URL (`?card=ID`) so it can be linked.
+- Filters: by assignee ("assigned to me"), by reviewer ("reviewed by me" / "no reviewer") and title search; drag-and-drop stays correct while filters hide cards.
 - **Live updates:** every mutation is broadcast over a per-board WebSocket (`/api/ws/boards/{id}`) and a global
   board-list channel (`/api/ws/boards`); clients refetch on receipt. Protocol in [`API.md`](API.md).
 

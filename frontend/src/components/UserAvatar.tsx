@@ -21,13 +21,15 @@ type GroupProps = {
   users: Array<Pick<User, 'id' | 'name' | 'initials' | 'color'>>;
   size?: AvatarProps['size'];
   max?: number;
+  /** per-avatar name tooltips (default true) */
+  tooltips?: boolean;
 };
 
-export function UserAvatarGroup({ users, size = 'small', max = 4 }: GroupProps) {
+export function UserAvatarGroup({ users, size = 'small', max = 4, tooltips = true }: GroupProps) {
   return (
     <Avatar.Group size={size} max={{ count: max, style: { backgroundColor: '#d9d9d9', color: '#595959' } }}>
       {users.map((u) => (
-        <UserAvatar key={u.id} user={u} size={size} />
+        <UserAvatar key={u.id} user={u} size={size} tooltip={tooltips} />
       ))}
     </Avatar.Group>
   );

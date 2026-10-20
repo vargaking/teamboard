@@ -78,6 +78,9 @@ export function applyCardUpdate(board: BoardDetail, cardId: number, update: Card
     ...(update.assignee_ids !== undefined
       ? { assignees: board.members.filter((m) => update.assignee_ids?.includes(m.id)) }
       : {}),
+    ...(update.reviewer_ids !== undefined
+      ? { reviewers: board.members.filter((m) => update.reviewer_ids?.includes(m.id)) }
+      : {}),
     ...(update.label_ids !== undefined
       ? { labels: board.labels.filter((l) => update.label_ids?.includes(l.id)) }
       : {}),

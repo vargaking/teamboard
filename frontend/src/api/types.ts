@@ -25,6 +25,7 @@ export type Card = {
   position: number;
   due_date: string | null;
   assignees: User[];
+  reviewers: User[];
   labels: Label[];
   comment_count: number;
   created_by: number;
@@ -97,6 +98,7 @@ export type CardCreate = {
   description?: string;
   due_date?: string | null;
   assignee_ids?: number[];
+  reviewer_ids?: number[];
   label_ids?: number[];
 };
 export type CardUpdate = {
@@ -104,6 +106,7 @@ export type CardUpdate = {
   description?: string;
   due_date?: string | null;
   assignee_ids?: number[];
+  reviewer_ids?: number[];
   label_ids?: number[];
 };
 export type CardMove = { column_id: number; position: number };

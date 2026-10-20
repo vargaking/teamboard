@@ -24,6 +24,7 @@ import { useComments, useCreateComment, useDeleteCard, useDeleteComment, useUpda
 import { DATE_FORMAT, dayjs, getDueStatus, isDoneColumnTitle, parseDueDate, parseTimestamp } from '../../utils/dates';
 import { LabelTag } from '../LabelTag';
 import { UserAvatar } from '../UserAvatar';
+import { MemberSelect } from './MemberSelect';
 
 type Props = {
   board: BoardDetail;
@@ -219,34 +220,36 @@ export function CardModal({ board, card, column, onClose }: Props) {
         onPressEnter={(e) => e.currentTarget.blur()}
         aria-label="Card title"
       />
-      <Typography.Text type="secondary" style={{ paddingInline: 11 }}>
+      <Typography.Text type="secondary">
         in column <Typography.Text strong>{column.title}</Typography.Text>
       </Typography.Text>
 
       <div className="card-modal-grid">
         <div>
           <FieldLabel>Assignees</FieldLabel>
-          <Select<number[]>
-            mode="multiple"
-            style={{ width: '100%' }}
+          <MemberSelect
+            ariaLabel="Assignees"
+            members={board.members}
             placeholder="Nobody assigned"
             value={card.assignees.map((a) => a.id)}
             onChange={(ids) => save({ assignee_ids: ids }, 'Could not update assignees')}
-            optionFilterProp="label"
-            options={board.members.map((m) => ({ value: m.id, label: m.name, user: m }))}
-            optionRender={(option) => (
-              <Space>
-                <UserAvatar user={option.data.user} size="small" tooltip={false} />
-                {option.data.user.name}
-              </Space>
-            )}
-            maxTagCount="responsive"
+          />
+        </div>
+        <div>
+          <FieldLabel>Reviewers</FieldLabel>
+          <MemberSelect
+            ariaLabel="Reviewers"
+            members={board.members}
+            placeholder="No reviewers"
+            value={card.reviewers.map((r) => r.id)}
+            onChange={(ids) => save({ reviewer_ids: ids }, 'Could not update reviewers')}
           />
         </div>
         <div>
           <FieldLabel>Labels</FieldLabel>
           <Select<number[]>
             mode="multiple"
+            aria-label="Labels"
             style={{ width: '100%' }}
             placeholder={board.labels.length ? 'No labels' : 'This board has no labels yet'}
             value={card.labels.map((l) => l.id)}

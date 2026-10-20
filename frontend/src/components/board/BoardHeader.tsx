@@ -14,19 +14,80 @@ import { EditableText } from './EditableText';
 import { LabelsModal } from './LabelsModal';
 import { MembersModal } from './MembersModal';
 
-/** Assignee filter value: 'all' | 'me' | 'unassigned' | user id. */
-export type AssigneeFilter = 'all' | 'me' | 'unassigned' | number;
+/** People filter value: 'all' | 'me' | 'none' (nobody in that role) | user id. */
+export type PersonFilter = 'all' | 'me' | 'none' | number;
 
 type Props = {
   board: BoardDetail;
   liveStatus: LiveStatus;
-  assigneeFilter: AssigneeFilter;
-  onAssigneeFilterChange: (value: AssigneeFilter) => void;
+  assigneeFilter: PersonFilter;
+  onAssigneeFilterChange: (value: PersonFilter) => void;
+  reviewerFilter: PersonFilter;
+  onReviewerFilterChange: (value: PersonFilter) => void;
   search: string;
   onSearchChange: (value: string) => void;
 };
 
-export function BoardHeader({ board, liveStatus, assigneeFilter, onAssigneeFilterChange, search, onSearchChange }: Props) {
+type PersonFilterSelectProps = {
+  board: BoardDetail;
+  currentUserId: number;
+  value: PersonFilter;
+  onChange: (value: PersonFilter) => void;
+  allLabel: string;
+  meLabel: string;
+  noneLabel: string;
+  ariaLabel: string;
+};
+
+function PersonFilterSelect({
+  board,
+  currentUserId,
+  value,
+  onChange,
+  allLabel,
+  meLabel,
+  noneLabel,
+  ariaLabel,
+}: PersonFilterSelectProps) {
+  return (
+    <Select<PersonFilter>
+      aria-label={ariaLabel}
+      style={{ width: 200 }}
+      value={value}
+      onChange={onChange}
+      showSearch
+      optionFilterProp="label"
+      options={[
+        { value: 'all', label: allLabel },
+        { value: 'me', label: meLabel },
+        { value: 'none', label: noneLabel },
+        ...board.members.filter((m) => m.id !== currentUserId).map((m) => ({ value: m.id, label: m.name })),
+      ]}
+      optionRender={(option) => {
+        const member = typeof option.value === 'number' ? board.members.find((m) => m.id === option.value) : undefined;
+        return member ? (
+          <Space>
+            <UserAvatar user={member} size="small" tooltip={false} />
+            {member.name}
+          </Space>
+        ) : (
+          option.label
+        );
+      }}
+    />
+  );
+}
+
+export function BoardHeader({
+  board,
+  liveStatus,
+  assigneeFilter,
+  onAssigneeFilterChange,
+  reviewerFilter,
+  onReviewerFilterChange,
+  search,
+  onSearchChange,
+}: Props) {
   const user = useCurrentUser();
   const navigate = useNavigate();
   const { message } = App.useApp();
@@ -105,31 +166,25 @@ export function BoardHeader({ board, liveStatus, assigneeFilter, onAssigneeFilte
         </Space>
       </div>
       <div className="board-filters">
-        <Select<AssigneeFilter>
-          style={{ width: 220 }}
+        <PersonFilterSelect
+          board={board}
+          currentUserId={user.id}
           value={assigneeFilter}
           onChange={onAssigneeFilterChange}
-          showSearch
-          optionFilterProp="label"
-          options={[
-            { value: 'all', label: 'All cards' },
-            { value: 'me', label: 'Assigned to me' },
-            { value: 'unassigned', label: 'Unassigned' },
-            ...board.members
-              .filter((m) => m.id !== user.id)
-              .map((m) => ({ value: m.id, label: m.name })),
-          ]}
-          optionRender={(option) => {
-            const member = typeof option.value === 'number' ? board.members.find((m) => m.id === option.value) : undefined;
-            return member ? (
-              <Space>
-                <UserAvatar user={member} size="small" tooltip={false} />
-                {member.name}
-              </Space>
-            ) : (
-              option.label
-            );
-          }}
+          ariaLabel="Filter by assignee"
+          allLabel="Any assignee"
+          meLabel="Assigned to me"
+          noneLabel="Unassigned"
+        />
+        <PersonFilterSelect
+          board={board}
+          currentUserId={user.id}
+          value={reviewerFilter}
+          onChange={onReviewerFilterChange}
+          ariaLabel="Filter by reviewer"
+          allLabel="Any reviewer"
+          meLabel="Reviewed by me"
+          noneLabel="No reviewer"
         />
         <Input
           allowClear

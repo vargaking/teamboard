@@ -4,10 +4,10 @@ import { DragDropContext, Droppable } from '@hello-pangea/dnd';
 import { AxiosError } from 'axios';
 import { App, Button, Result, Space, Spin } from 'antd';
 import { getErrorMessage } from '../api/client';
-import type { BoardDetail, Card } from '../api/types';
+import type { BoardDetail, Card, User } from '../api/types';
 import { useCurrentUser } from '../auth/AuthContext';
 import { BoardColumn } from '../components/board/BoardColumn';
-import { BoardHeader, type AssigneeFilter } from '../components/board/BoardHeader';
+import { BoardHeader, type PersonFilter } from '../components/board/BoardHeader';
 import { CardModal } from '../components/board/CardModal';
 import { InlineAddInput } from '../components/board/InlineAddInput';
 import { COLUMN_DROPPABLE_ID, DND_TYPE_COLUMN, useBoardDnd } from '../hooks/useBoardDnd';
@@ -15,18 +15,28 @@ import { useBoard, useCreateColumn } from '../hooks/useBoards';
 import { useBoardSocket } from '../hooks/useBoardSocket';
 import { findCard } from '../utils/board';
 
-function useCardFilter(assigneeFilter: AssigneeFilter, search: string, currentUserId: number) {
+function matchesPerson(people: User[], filter: PersonFilter, currentUserId: number): boolean {
+  if (filter === 'all') return true;
+  if (filter === 'none') return people.length === 0;
+  const userId = filter === 'me' ? currentUserId : filter;
+  return people.some((p) => p.id === userId);
+}
+
+/** All active filters are combined with AND. */
+function useCardFilter(
+  assigneeFilter: PersonFilter,
+  reviewerFilter: PersonFilter,
+  search: string,
+  currentUserId: number,
+) {
   const needle = search.trim().toLowerCase();
-  const active = assigneeFilter !== 'all' || needle !== '';
+  const active = assigneeFilter !== 'all' || reviewerFilter !== 'all' || needle !== '';
   const predicate = useCallback(
-    (card: Card): boolean => {
-      if (needle && !card.title.toLowerCase().includes(needle)) return false;
-      if (assigneeFilter === 'all') return true;
-      if (assigneeFilter === 'unassigned') return card.assignees.length === 0;
-      const userId = assigneeFilter === 'me' ? currentUserId : assigneeFilter;
-      return card.assignees.some((a) => a.id === userId);
-    },
-    [assigneeFilter, needle, currentUserId],
+    (card: Card): boolean =>
+      (!needle || card.title.toLowerCase().includes(needle)) &&
+      matchesPerson(card.assignees, assigneeFilter, currentUserId) &&
+      matchesPerson(card.reviewers, reviewerFilter, currentUserId),
+    [assigneeFilter, reviewerFilter, needle, currentUserId],
   );
   return { active, predicate };
 }
@@ -37,10 +47,11 @@ function BoardView({ board }: { board: BoardDetail }) {
   const liveStatus = useBoardSocket(board.id);
   const createColumn = useCreateColumn(board.id);
   const [searchParams, setSearchParams] = useSearchParams();
-  const [assigneeFilter, setAssigneeFilter] = useState<AssigneeFilter>('all');
+  const [assigneeFilter, setAssigneeFilter] = useState<PersonFilter>('all');
+  const [reviewerFilter, setReviewerFilter] = useState<PersonFilter>('all');
   const [search, setSearch] = useState('');
 
-  const { active: filterActive, predicate } = useCardFilter(assigneeFilter, search, user.id);
+  const { active: filterActive, predicate } = useCardFilter(assigneeFilter, reviewerFilter, search, user.id);
 
   const visibleByColumn = useMemo(() => {
     const map = new Map<number, Card[]>();
@@ -94,6 +105,8 @@ function BoardView({ board }: { board: BoardDetail }) {
         liveStatus={liveStatus}
         assigneeFilter={assigneeFilter}
         onAssigneeFilterChange={setAssigneeFilter}
+        reviewerFilter={reviewerFilter}
+        onReviewerFilterChange={setReviewerFilter}
         search={search}
         onSearchChange={setSearch}
       />

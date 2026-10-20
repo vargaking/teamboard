@@ -1,7 +1,7 @@
 import { memo } from 'react';
 import { Draggable } from '@hello-pangea/dnd';
 import { Space, Tooltip, Typography } from 'antd';
-import { AlignLeftOutlined, ClockCircleOutlined, MessageOutlined } from '@ant-design/icons';
+import { AlignLeftOutlined, ClockCircleOutlined, EyeOutlined, MessageOutlined } from '@ant-design/icons';
 import type { Card } from '../../api/types';
 import { formatDueDate, getDueStatus } from '../../utils/dates';
 import { LabelTag } from '../LabelTag';
@@ -42,7 +42,11 @@ function CardTileInner({ card, index, inDoneColumn, onOpen }: Props) {
             </div>
           )}
           <Typography.Text className="card-tile-title">{card.title}</Typography.Text>
-          {(card.due_date || card.comment_count > 0 || card.description || card.assignees.length > 0) && (
+          {(card.due_date ||
+            card.comment_count > 0 ||
+            card.description ||
+            card.assignees.length > 0 ||
+            card.reviewers.length > 0) && (
             <div className="card-tile-meta">
               <Space size={8} wrap>
                 {card.due_date && dueStatus && (
@@ -64,8 +68,20 @@ function CardTileInner({ card, index, inDoneColumn, onOpen }: Props) {
                     </span>
                   </Tooltip>
                 )}
+                {card.reviewers.length > 0 && (
+                  <Tooltip title={`Reviewers: ${card.reviewers.map((r) => r.name).join(', ')}`}>
+                    <span className="card-tile-reviewers">
+                      <EyeOutlined className="card-tile-icon" />
+                      <UserAvatarGroup users={card.reviewers} size={20} max={2} tooltips={false} />
+                    </span>
+                  </Tooltip>
+                )}
               </Space>
-              {card.assignees.length > 0 && <UserAvatarGroup users={card.assignees} size={24} max={3} />}
+              {card.assignees.length > 0 && (
+                <span className="card-tile-assignees">
+                  <UserAvatarGroup users={card.assignees} size={24} max={3} />
+                </span>
+              )}
             </div>
           )}
         </div>

@@ -400,6 +400,19 @@ body {
   min-height: 24px;
 }
 
+.card-tile-reviewers {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 1px 6px 1px 4px;
+  border-radius: 12px;
+  background: #f2f3f5;
+}
+
+.card-tile-reviewers .ant-avatar {
+  font-size: 10px;
+}
+
 .card-tile-icon {
   color: rgba(0, 0, 0, 0.45);
   font-size: 12px;
@@ -429,15 +442,17 @@ body {
 
 /* ---------- card modal ---------- */
 
-.card-modal-title {
+.card-modal-title.ant-input {
   font-size: 20px;
   font-weight: 600;
+  padding-inline: 0;
   margin-right: 24px;
 }
 
 .card-modal-grid {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  /* 2x2: Assignees | Reviewers / Labels | Due date */
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 12px;
   margin-top: 16px;
 }
