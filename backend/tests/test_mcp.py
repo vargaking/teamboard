@@ -88,8 +88,11 @@ async def _oauth_flow(http: httpx2.AsyncClient, user_headers: dict[str, str]) ->
     redirect = urlparse(r.json()["redirect_to"])
     assert redirect.netloc == "claude.ai"
     q = parse_qs(redirect.query)
-    assert q["state"] == [state]
+    assert q["state"] == [state] and q["iss"] == [f"{BASE}/api/oauth"]  # RFC 9207
     code = q["code"][0]
+    # a denied consent sends the client an error, never a code
+    denied = (await http.post("/api/oauth/consent", json={"req": req, "approve": False}, headers=user_headers)).json()["redirect_to"]
+    assert parse_qs(urlparse(denied).query)["error"] == ["access_denied"] and "code=" not in denied
 
     # --- token exchange (PKCE verified by the SDK) ---
     bad = await http.post(

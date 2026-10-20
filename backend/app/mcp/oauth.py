@@ -120,8 +120,9 @@ async def complete_consent(req: str, user: User, approve: bool) -> str:
     if payload is None:
         raise ValueError("This authorization request is invalid or has expired. Start again from Claude.")
     redirect_uri = payload["redirect_uri"]
+    # `iss` on every authorization response (RFC 9207) - ChatGPT asks for it, harmless for other clients.
     if not approve:
-        return construct_redirect_uri(redirect_uri, error="access_denied", state=payload.get("state"))
+        return construct_redirect_uri(redirect_uri, error="access_denied", state=payload.get("state"), iss=issuer_url())
     code = secrets.token_urlsafe(32)
     await OAuthAuthorizationCode.create(
         code=code,
@@ -134,7 +135,7 @@ async def complete_consent(req: str, user: User, approve: bool) -> str:
         resource=payload.get("resource"),
         expires_at=time.time() + CODE_TTL_SECONDS,
     )
-    return construct_redirect_uri(redirect_uri, code=code, state=payload.get("state"))
+    return construct_redirect_uri(redirect_uri, code=code, state=payload.get("state"), iss=issuer_url())
 
 
 # ---------- the provider the SDK calls ----------
