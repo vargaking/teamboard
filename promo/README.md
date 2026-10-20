@@ -23,13 +23,18 @@ python3 -m venv .work/ttsvenv && .work/ttsvenv/bin/pip install kokoro-onnx sound
 .work/ttsvenv/bin/python audio/make_voice.py
 
 # 3. Music -> public/audio/music.wav (needs numpy + scipy)
-python3 audio/make_music.py 132               # seconds; a little longer than the video, it fades out
+npx tsx scripts/timeline.ts                   # prints scene timings and the total length
+python3 audio/make_music.py 114.5             # seconds: the video length (+ a little), so the final chord lands
 
-# 4. Render
+# 4. Render (~45 min on 2 CPUs), then loudness-normalise to -16 LUFS, cut the 10 s preview, extract key frames
 npx remotion render src/index.ts TeamBoardPromo out/teamboard-promo.mp4
-npx remotion render src/index.ts TeamBoardPromo out/teamboard-preview-10s.mp4 --frames=0-299
+sh scripts/finalize.sh
 npx remotion studio                           # interactive preview / tweaking
+node scripts/stills.mjs .work/stills 600 1100 # render single frames to PNG for quick checks
 ```
+
+`out/teamboard-preview-10s.mp4` is 0:14-0:24 of the final cut (the "Boards & cards" scene); `out/frames/` holds
+key frames at the timestamps in their names.
 
 If Chromium lives elsewhere, set `REMOTION_BROWSER=/path/to/headless_shell`. `REMOTION_CONCURRENCY` sets the
 number of render tabs (default 2).
