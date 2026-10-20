@@ -1,0 +1,174 @@
+{
+  "voice": "af_heart",
+  "scenes": [
+    {
+      "id": "hook",
+      "minSeconds": 5,
+      "lines": [
+        {
+          "file": "audio/voice/hook_0.wav",
+          "seconds": 3.631,
+          "text": "Twelve people. One project. Every task in one place."
+        }
+      ]
+    },
+    {
+      "id": "intro",
+      "minSeconds": 8,
+      "lines": [
+        {
+          "file": "audio/voice/intro_0.wav",
+          "seconds": 4.413,
+          "text": "This is TeamBoard: the kanban board built for Lucrum, our SEP team."
+        },
+        {
+          "file": "audio/voice/intro_1.wav",
+          "seconds": 1.301,
+          "text": "Think Trello, but ours."
+        }
+      ]
+    },
+    {
+      "id": "boards",
+      "minSeconds": 18,
+      "lines": [
+        {
+          "file": "audio/voice/boards_0.wav",
+          "seconds": 1.9,
+          "text": "Every workstream gets its own board."
+        },
+        {
+          "file": "audio/voice/boards_1.wav",
+          "seconds": 5.324,
+          "text": "Columns hold cards, with coloured labels, due dates and the avatars of whoever is on it."
+        },
+        {
+          "file": "audio/voice/boards_2.wav",
+          "seconds": 3.057,
+          "text": "Finished something? Just drag the card to the next column."
+        }
+      ]
+    },
+    {
+      "id": "live",
+      "minSeconds": 13,
+      "lines": [
+        {
+          "file": "audio/voice/live_0.wav",
+          "seconds": 1.782,
+          "text": "And everyone sees it instantly."
+        },
+        {
+          "file": "audio/voice/live_1.wav",
+          "seconds": 3.945,
+          "text": "When Miki moves a card, it moves on your screen too. No refresh."
+        },
+        {
+          "file": "audio/voice/live_2.wav",
+          "seconds": 1.979,
+          "text": "The green Live dot means you're in sync."
+        }
+      ]
+    },
+    {
+      "id": "details",
+      "minSeconds": 13,
+      "lines": [
+        {
+          "file": "audio/voice/details_0.wav",
+          "seconds": 4.165,
+          "text": "Open a card for the full picture: description, due date and assignees."
+        },
+        {
+          "file": "audio/voice/details_1.wav",
+          "seconds": 5.226,
+          "text": "Reviewers get the eye icon, labels keep things sorted, and comments hold the discussion."
+        }
+      ]
+    },
+    {
+      "id": "filters",
+      "minSeconds": 14,
+      "lines": [
+        {
+          "file": "audio/voice/filters_0.wav",
+          "seconds": 3.532,
+          "text": "Busy board? Filter by assignee or reviewer, or just search."
+        },
+        {
+          "file": "audio/voice/filters_1.wav",
+          "seconds": 2.944,
+          "text": "Right-click any card or column for quick actions."
+        },
+        {
+          "file": "audio/voice/filters_2.wav",
+          "seconds": 1.684,
+          "text": "And yes, there's a dark mode."
+        }
+      ]
+    },
+    {
+      "id": "claude",
+      "minSeconds": 19,
+      "lines": [
+        {
+          "file": "audio/voice/claude_0.wav",
+          "seconds": 1.963,
+          "text": "TeamBoard also works with Claude."
+        },
+        {
+          "file": "audio/voice/claude_1.wav",
+          "seconds": 6.041,
+          "text": "Open Connect to Claude from your avatar menu and add the connector to claude.ai or Claude Code."
+        },
+        {
+          "file": "audio/voice/claude_2.wav",
+          "seconds": 4.626,
+          "text": "Claude can read your boards, create cards and move them, as you, with your permissions."
+        },
+        {
+          "file": "audio/voice/claude_3.wav",
+          "seconds": 2.187,
+          "text": "Ask for a card, and it shows up live."
+        }
+      ]
+    },
+    {
+      "id": "import",
+      "minSeconds": 14,
+      "lines": [
+        {
+          "file": "audio/voice/import_0.wav",
+          "seconds": 6.465,
+          "text": "Coming from Trello? Import a board from its JSON export: lists, cards, labels and comments come along."
+        },
+        {
+          "file": "audio/voice/import_1.wav",
+          "seconds": 4.599,
+          "text": "Admins run the Team page: add people directly, or send an invite link."
+        }
+      ]
+    },
+    {
+      "id": "login",
+      "minSeconds": 12,
+      "lines": [
+        {
+          "file": "audio/voice/login_0.wav",
+          "seconds": 4.247,
+          "text": "To get started, go to teamboard-sep.vercel.app."
+        },
+        {
+          "file": "audio/voice/login_1.wav",
+          "seconds": 6.197,
+          "text": "Log in with your first name @teamboard.local, then change your password from the avatar menu."
+        },
+        {
+          "file": "audio/voice/login_2.wav",
+          "seconds": 1.097,
+          "text": "See you on the board!"
+        }
+      ]
+    }
+  ]
+}

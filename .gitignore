@@ -22,3 +22,4 @@ promo/**/*.mp4
 promo/**/*.db
 promo/.work/
 promo/public/clips/
+promo/public/audio/

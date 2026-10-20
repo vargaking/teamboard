@@ -154,14 +154,18 @@ class Session:
         path = os.path.join(CLIPS, "clips.json")
         self.meta = json.load(open(path)) if os.path.exists(path) else {}
 
-    def finish(self, name: str, rec: Rec, markers: dict, files: dict | None = None):
+    def finish(self, name: str, rec: Rec, markers: dict, files: dict | None = None, boxes: dict | None = None,
+               view: dict | None = None):
         files = files or {name: name}
         for page_name, out_name in files.items():
             encode(out_name, os.path.join(rec.outdir, page_name))
-        size = None
-        self.meta[name] = {"frames": rec.count, "markers": markers, "files": list(files.values())}
-        if size:
-            self.meta[name]["size"] = size
+        self.meta[name] = {
+            "frames": rec.count,
+            "markers": markers,
+            "boxes": boxes or {},  # [x, y, w, h] in CSS px of the capture viewport
+            "view": view or VIEW,
+            "files": list(files.values()),
+        }
         with open(os.path.join(CLIPS, "clips.json"), "w") as fh:
             json.dump(self.meta, fh, indent=2)
         print(f"clip {name}: {rec.count} frames, markers {markers}")
@@ -172,6 +176,14 @@ def frames_dir(name):
     shutil.rmtree(d, ignore_errors=True)
     os.makedirs(d)
     return d
+
+
+def box(locator, pad: float = 0):
+    """Bounding box [x, y, w, h] (CSS px) of an element, for zoom targets in the edit."""
+    b = locator.bounding_box()
+    if b is None:
+        return None
+    return [round(b["x"] - pad, 1), round(b["y"] - pad, 1), round(b["width"] + 2 * pad, 1), round(b["height"] + 2 * pad, 1)]
 
 
 def card(page, title):
@@ -193,6 +205,8 @@ def clip_boards(browser, ses: Session):
     settle(page)
     rec = Rec({"main": page}, frames_dir("boards"))
     m = {}
+    b = {"lucrumTile": box(page.locator(".board-tile", has_text="Lucrum Backtesting")),
+         "grid": box(page.locator(".board-tile").first), "header": box(page.locator(".page-header").first)}
     rec.set_mouse("main", 1180, 640)
     rec.hold(0.6)
     rec.glide("main", *rec.center("main", page.locator(".board-tile", has_text="Sprint 3")), 0.9, arc=0.2)
@@ -205,9 +219,13 @@ def clip_boards(browser, ses: Session):
     rec.click("main")
     page.wait_for_selector(".card-tile")
     page.wait_for_timeout(300)
+    b["boardHeader"] = box(page.locator(".board-column").first)
+    b["sharpeCard"] = box(card(page, "Sharpe ratio"))
+    b["backtestCard"] = box(card(page, "Backtest configuration form"))
+    b["columns"] = box(page.locator(".board-column").first)
     rec.glide("main", 1250, 700, 0.8)
     rec.hold(1.6)
-    ses.finish("boards", rec, m, {"main": "boards"})
+    ses.finish("boards", rec, m, {"main": "boards"}, b)
     ctx.close()
 
 
@@ -221,6 +239,7 @@ def clip_drag(browser, ses: Session):
     rec.set_mouse("main", 760, 700)
     rec.hold(0.5)
     src = card(page, "Login page + auth context")
+    b0 = {"source": box(src), "sharpeCard": box(card(page, "Sharpe ratio"))}
     rec.glide("main", *rec.center("main", src, dx=-20), 0.9, arc=0.2)
     rec.hold(0.4)
     m["grab"] = rec.count
@@ -232,7 +251,8 @@ def clip_drag(browser, ses: Session):
     rec.hold(0.5)
     rec.glide("main", target[0] + 230, target[1] + 90, 0.7)
     rec.hold(1.4)
-    ses.finish("drag", rec, m, {"main": "drag"})
+    b = {"moved": box(card(page, "Login page + auth context")), "review": box(review), **b0}
+    ses.finish("drag", rec, m, {"main": "drag"}, b)
     ctx.close()
 
 
@@ -248,25 +268,27 @@ def clip_live(browser, ses: Session):
     m = {}
     rec.set_mouse("miki", 900, 700)
     rec.hold(0.6)
-    src = card(pm, "Sharpe ratio")
+    # Stay in the middle of the viewport: @hello-pangea/dnd auto-scrolls the board near the edges.
+    src = card(pm, "Market data importer")
     rec.glide("miki", *rec.center("miki", src, dx=-30), 0.9, arc=0.2)
     rec.hold(0.3)
     m["grab"] = rec.count
-    done = column(pm, "Done")
-    first = done.locator(".card-tile").first.bounding_box()
-    target = (first["x"] + first["width"] / 2, first["y"] + 30)
+    first = column(pm, "Review").locator(".card-tile").first.bounding_box()
+    target = (first["x"] + first["width"] / 2, first["y"] + 25)
     rec.drag("miki", *target, seconds=1.6, arc=0.1)
     m["drop"] = rec.count
     # wait until Daniel's page shows the card in Done
     for _ in range(40):
-        if column(pd, "Done").locator(".card-tile", has_text="Sharpe ratio").count():
+        if column(pd, "Review").locator(".card-tile", has_text="Market data importer").count():
             break
         rec.frame()
     m["synced"] = rec.count
     rec.hold(0.4)
     rec.glide("miki", target[0] + 120, target[1] + 260, 0.6)
     rec.hold(2.2)
-    ses.finish("live", rec, m, {"daniel": "live-daniel", "miki": "live-miki"})
+    b = {"liveDot": box(pd.locator(".live-indicator").first, 6),
+         "syncedCard": box(column(pd, "Review").locator(".card-tile", has_text="Market data importer"))}
+    ses.finish("live", rec, m, {"daniel": "live-daniel", "miki": "live-miki"}, b, LIVE_VIEW)
     ctx_d.close()
     ctx_m.close()
 
@@ -288,29 +310,36 @@ def clip_details(browser, ses: Session):
     rec.hold(1.0)
     m["opened"] = rec.count
     modal = page.locator(".ant-modal-content")
+    b = {"modal": box(modal), "people": box(modal.locator(".ant-select", has_text="Miki Petkovic").first),
+         "assignees": box(modal.locator(".ant-select", has_text="Andrada Florea").first),
+         "labels": box(modal.locator(".ant-select", has_text="frontend").first)}
     # glide over the people area, then to the comment box
-    rec.glide("main", *rec.center("main", modal.get_by_text("Reviewers").first, dx=120), 0.9)
+    rec.glide("main", *rec.center("main", modal.locator(".ant-select", has_text="Miki Petkovic").first, dx=40), 0.9)
     m["reviewers"] = rec.count
-    rec.hold(1.6)
-    box = modal.locator("textarea").last
-    box.scroll_into_view_if_needed()
-    rec.frame(3)
-    rec.glide("main", *rec.center("main", box), 0.8)
+    rec.hold(1.4)
+    rec.glide("main", *rec.center("main", modal.get_by_text("Comments", exact=True).first, dx=200), 0.6)
+    for _ in range(12):  # scroll the modal so the comment thread and the input are in view
+        page.mouse.wheel(0, 40)
+        rec.frame()
+    rec.hold(0.4)
+    b["comments"] = box(modal.get_by_text("Comments", exact=True).first)
+    ta = modal.locator("textarea").last
+    rec.glide("main", *rec.center("main", ta), 0.6)
     m["comment"] = rec.count
     rec.click("main")
     rec.type("main", "Reviewed: looks great, merging!", per_char_frames=1)
     rec.hold(0.3)
-    send = modal.get_by_role("button", name="Comment")
-    if send.count():
-        rec.glide("main", *rec.center("main", send.first), 0.5)
-        rec.click("main")
-    else:
-        page.keyboard.press("Control+Enter")
+    send = modal.get_by_role("button", name="Comment", exact=True)
+    rec.glide("main", *rec.center("main", send.first), 0.5)
+    rec.click("main")
     m["sent"] = rec.count
-    rec.hold(2.0)
+    rec.hold(1.0)
+    b["newComment"] = box(modal.get_by_text("Reviewed: looks great, merging!").last)
+    b["modalAfter"] = box(modal)
+    rec.hold(1.0)
     page.keyboard.press("Escape")
     rec.hold(0.6)
-    ses.finish("details", rec, m, {"main": "details"})
+    ses.finish("details", rec, m, {"main": "details"}, b)
     ctx.close()
 
 
@@ -342,6 +371,7 @@ def clip_filters(browser, ses: Session):
     labels = page.locator(".ant-select [aria-label]").evaluate_all("els => els.map(e => e.getAttribute('aria-label'))")
     assignee_label = next(l for l in labels if "ssignee" in l)
     reviewer_label = next(l for l in labels if "eviewer" in l)
+    b = {"filterBar": box(page.locator(".ant-select").first)}
     pick_option(rec, page, assignee_label, "Assigned to me", m, "assignee")
     rec.hold(1.0)
     pick_option(rec, page, assignee_label, "Any assignee", m, "assigneeReset")
@@ -357,7 +387,8 @@ def clip_filters(browser, ses: Session):
     page.keyboard.press("Control+A")
     page.keyboard.press("Backspace")
     rec.hold(0.4)
-    ses.finish("filters", rec, m, {"main": "filters"})
+    b["search"] = box(search)
+    ses.finish("filters", rec, m, {"main": "filters"}, b)
     ctx.close()
 
 
@@ -375,6 +406,7 @@ def clip_context(browser, ses: Session):
     rec.click("main", button="right")
     page.wait_for_selector(".ant-dropdown:visible")
     rec.hold(0.5)
+    b = {"cardMenu": box(page.locator(".ant-dropdown:visible").first)}
     move = page.locator(".ant-dropdown:visible .ant-dropdown-menu-submenu-title", has_text="Move to").first
     rec.glide("main", *rec.center("main", move), 0.5)
     rec.hold(1.2)
@@ -385,10 +417,12 @@ def clip_context(browser, ses: Session):
     rec.glide("main", *rec.center("main", header, dx=-40), 0.7)
     m["columnMenu"] = rec.count
     rec.click("main", button="right")
-    rec.hold(1.6)
+    rec.hold(0.3)
+    b["columnMenu"] = box(page.locator(".ant-dropdown:visible").last)
+    rec.hold(1.3)
     page.keyboard.press("Escape")
     rec.hold(0.3)
-    ses.finish("context", rec, m, {"main": "context"})
+    ses.finish("context", rec, m, {"main": "context"}, b)
     ctx.close()
 
 
@@ -404,10 +438,11 @@ def clip_dark(browser, ses: Session):
     rec.glide("main", *rec.center("main", page.locator(".theme-toggle")), 0.8)
     rec.hold(0.2)
     m["toggle"] = rec.count
+    b = {"toggle": box(page.locator(".theme-toggle"), 4)}
     rec.click("main")
     rec.glide("main", 1000, 520, 1.0)
     rec.hold(1.8)
-    ses.finish("dark", rec, m, {"main": "dark"})
+    ses.finish("dark", rec, m, {"main": "dark"}, b)
     ctx.close()
 
 
@@ -425,6 +460,7 @@ def clip_claude(browser, ses: Session):
     page.wait_for_selector(".ant-dropdown:visible")
     rec.hold(0.4)
     item = page.locator(".ant-dropdown:visible .ant-dropdown-menu-item", has_text="Connect to Claude").first
+    b = {"menu": box(page.locator(".ant-dropdown:visible").first)}
     rec.glide("main", *rec.center("main", item), 0.5)
     m["menu"] = rec.count
     rec.hold(0.3)
@@ -433,6 +469,8 @@ def clip_claude(browser, ses: Session):
     page.wait_for_timeout(200)
     m["dialog"] = rec.count
     rec.hold(1.0)
+    b["dialog"] = box(page.locator(".ant-modal-content"))
+    b["steps"] = box(page.locator(".ant-modal-content .connect-steps"))
     rec.glide("main", *rec.center("main", page.locator(".ant-modal-content .connect-steps")), 0.8)
     rec.hold(2.2)
     tab = page.locator(".ant-modal-content .ant-tabs-tab", has_text="Claude Code").first
@@ -457,9 +495,11 @@ def clip_claude(browser, ses: Session):
         rec.frame()
     m["appeared"] = rec.count
     rec.hold(0.6)
+    b["newCard"] = box(card(page, "Created by Claude"))
+    b["todo"] = box(column(page, "To do"))
     rec.glide("main", *rec.center("main", card(page, "Created by Claude"), dx=60), 0.8)
     rec.hold(2.2)
-    ses.finish("claude", rec, m, {"main": "claude"})
+    ses.finish("claude", rec, m, {"main": "claude"}, b)
     ctx.close()
 
 
@@ -532,6 +572,7 @@ def clip_trello(browser, ses: Session):
         rec.frame()
     m["preview"] = rec.count
     rec.hold(0.6)
+    b = {"modal": box(page.locator(".ant-modal-content"))}
     rec.glide("main", *rec.center("main", page.locator(".ant-modal-content").get_by_text("Miki Petkovic").first), 0.8)
     rec.hold(1.8)
     btn = page.locator(".ant-modal-footer button.ant-btn-primary").last
@@ -545,8 +586,10 @@ def clip_trello(browser, ses: Session):
     page.wait_for_timeout(200)
     m["imported"] = rec.count
     rec.glide("main", 1250, 700, 0.6)
-    rec.hold(1.8)
-    ses.finish("trello", rec, m, {"main": "trello"})
+    rec.hold(0.6)
+    b["after"] = box(page.locator(".board-column").first) if page.locator(".board-column").count() else None
+    rec.hold(1.2)
+    ses.finish("trello", rec, m, {"main": "trello"}, b)
     ctx.close()
 
 
@@ -557,6 +600,7 @@ def clip_team(browser, ses: Session):
     settle(page, 1200)
     rec = Rec({"main": page}, frames_dir("team"))
     m = {}
+    b = {"table": box(page.locator(".ant-table").first)}
     rec.set_mouse("main", 700, 500)
     rec.hold(0.6)
     rec.glide("main", 760, 420, 0.8)
@@ -579,9 +623,11 @@ def clip_team(browser, ses: Session):
     rec.glide("main", *rec.center("main", create), 0.7)
     m["create"] = rec.count
     rec.click("main")
-    rec.hold(2.6)
+    rec.hold(0.6)
+    b["inviteModal"] = box(page.locator(".ant-modal-content").last)
+    rec.hold(2.0)
     m["link"] = rec.count
-    ses.finish("team", rec, m, {"main": "team"})
+    ses.finish("team", rec, m, {"main": "team"}, b)
     ctx.close()
 
 
@@ -592,6 +638,7 @@ def clip_login(browser, ses: Session):
     settle(page)
     rec = Rec({"main": page}, frames_dir("login"))
     m = {}
+    b = {"form": box(page.locator("form").first)}
     rec.set_mouse("main", 1000, 650)
     rec.hold(0.4)
     inputs = page.locator("input")
@@ -620,9 +667,11 @@ def clip_login(browser, ses: Session):
     page.wait_for_selector(".ant-modal-content")
     rec.hold(0.5)
     m["modal"] = rec.count
+    b["modal"] = box(page.locator(".ant-modal-content"))
+    b["menu"] = None
     rec.glide("main", *rec.center("main", page.locator(".ant-modal-content input").first), 0.6)
     rec.hold(1.8)
-    ses.finish("login", rec, m, {"main": "login"})
+    ses.finish("login", rec, m, {"main": "login"}, b)
     ctx.close()
 
 
