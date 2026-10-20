@@ -277,15 +277,17 @@ body {
   display: flex;
   align-items: flex-start;
   padding: 16px 20px 20px;
-  overflow-x: auto;
-  overflow-y: hidden;
+  /*
+   * The canvas is the ONLY scroll container (both axes). @hello-pangea/dnd does not support
+   * nested scroll containers, so columns grow with their cards instead of scrolling internally.
+   */
+  overflow: auto;
   min-height: 0;
 }
 
 .board-column {
   flex: 0 0 var(--column-width);
   width: var(--column-width);
-  max-height: 100%;
   display: flex;
   flex-direction: column;
   background: var(--column-bg);
@@ -322,7 +324,6 @@ body {
 .column-cards {
   flex: 1 1 auto;
   min-height: 12px;
-  overflow-y: auto;
   padding: 4px 8px;
   transition: background-color 0.15s ease;
 }
