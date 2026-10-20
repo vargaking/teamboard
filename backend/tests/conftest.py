@@ -15,24 +15,31 @@ from tortoise import Tortoise
 from app.db import TORTOISE_ORM
 from app.main import app
 
+TABLES = (
+    "card_labels, card_assignees, card_reviewers, comments, cards, columns, labels, board_members, boards, "
+    "api_tokens, oauth_codes, oauth_clients, users, aerich"
+)
+
 
 async def _drop_everything() -> None:
     """Postgres test DBs persist between tests; wipe them so each test starts from the seed only."""
     await Tortoise.init(config=TORTOISE_ORM)
     try:
-        conn = Tortoise.get_connection("default")
-        tables = "card_labels, card_assignees, comments, cards, columns, labels, board_members, boards, users, aerich"
-        await conn.execute_script(f"DROP TABLE IF EXISTS {tables} CASCADE;")
+        await Tortoise.get_connection("default").execute_script(f"DROP TABLE IF EXISTS {TABLES} CASCADE;")
     finally:
         await Tortoise.close_connections()
 
 
-@pytest.fixture
-def client():
+def reset_database() -> None:
     if os.environ["DATABASE_URL"].startswith("postgres"):
         import asyncio
 
         asyncio.run(_drop_everything())
+
+
+@pytest.fixture
+def client():
+    reset_database()
     # Context manager runs the lifespan: DB init, schema generation, seeding.
     with TestClient(app) as c:
         yield c

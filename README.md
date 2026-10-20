@@ -66,7 +66,10 @@ ruff check app tests && ruff format --check app tests
 - Boards with members (admins see every board; others only boards they belong to); owner/admin can delete.
 - Columns: create, rename, drag to reorder, delete (cascades cards). New boards start with *To do / In progress / Review / Done*.
 - Cards: drag between/within columns, title, description, due date (overdue/soon highlighting), multiple assignees and reviewers (board members only; reviewers shown with an eye icon), coloured labels, comments. The open card is in the URL (`?card=ID`) so it can be linked.
-- **AI (bring your own key)**: per-user Anthropic or OpenAI key stored encrypted; card assist (description, acceptance criteria, subtasks, labels), board summary, cards drafted from pasted notes, chat with the board. AI only proposes; the user confirms before anything is written. Right-click context menus on cards, columns and the canvas.
+- Right-click context menus on cards, columns and the canvas. Dark mode.
+- **Claude connector (MCP)**: the backend is an MCP server, so Claude can list/search boards, create, update and move
+  cards, and comment — as you, with your permissions. claude.ai connects through OAuth (log in once on the consent page);
+  Claude Code and scripts use a personal token from *avatar menu → Connect to Claude*. See `API.md` for the tool list.
 - Filters: by assignee ("assigned to me"), by reviewer ("reviewed by me" / "no reviewer") and title search; drag-and-drop stays correct while filters hide cards.
 - **Live updates:** every mutation is broadcast over a per-board WebSocket (`/api/ws/boards/{id}`) and a global
   board-list channel (`/api/ws/boards`); clients refetch on receipt. Protocol in [`API.md`](API.md).
@@ -97,6 +100,15 @@ Both configs forward WebSocket upgrades (required for live updates). For HTTPS, 
 containers stay plain HTTP on localhost. Updating: `git pull && docker compose up -d --build` (migrations run on start).
 Backups: `docker compose exec db pg_dump -U teamboard teamboard > backup.sql`.
 
+## Connecting Claude
+
+- **claude.ai**: Settings → Connectors → *Add custom connector* → paste `https://<your PUBLIC_URL>/api/mcp` → Connect →
+  log in with your TeamBoard account on the consent page. Needs `PUBLIC_URL` set to the HTTPS address users reach the app at.
+- **Claude Code**: create a personal token in *Connect to Claude*, then
+  `claude mcp add --transport http teamboard https://<PUBLIC_URL>/api/mcp --header "Authorization: Bearer tb_pat_…"`.
+- Tokens are stored hashed; OAuth access tokens last 1 h and are refreshed automatically (refresh tokens rotate, 30 days).
+  Revoke personal tokens in the same dialog; revoke a claude.ai connection by removing the connector there.
+
 ## Architecture notes
 
 - `API.md` is the contract between frontend and backend; keep it updated when you change an endpoint.
@@ -105,7 +117,7 @@ Backups: `docker compose exec db pg_dump -U teamboard teamboard > backup.sql`.
 - The WebSocket hub (`backend/app/realtime.py`) is **in-process**. Run the API with a single uvicorn worker
   (the default). To scale to several workers/containers, replace `BoardHub` with a Redis pub/sub implementation
   with the same methods — nothing else needs to change.
-- AI provider keys are encrypted with a Fernet key derived from `SECRET_KEY`; rotating `SECRET_KEY` means everyone re-enters their key. Provider calls go through `backend/app/ai/providers.py` (structured output via a forced tool call on Anthropic, `json_schema` on OpenAI).
+- MCP: `backend/app/mcp/server.py` holds the tools, `oauth.py` the token/consent logic, `mount.py` the routing. The MCP SDK provides the OAuth endpoints and PKCE; we provide storage and the consent handoff to the SPA.
 - Auth is a stateless HS256 JWT (`SECRET_KEY`), one week lifetime; the WebSocket takes it as `?token=`.
 - Non-public e-mails (`@teamboard.local`) are allowed on purpose; swap `Email` in `schemas.py` for `EmailStr`
   if you ever open registration to real addresses.

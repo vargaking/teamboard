@@ -19,6 +19,9 @@ class Settings(BaseSettings):
     auto_generate_schemas: bool = False
     seed_on_startup: bool = False
     seed_password: str = "changeme"
+    # Public origin (plus path prefix, if any) users reach the app at, e.g. https://board.example.com or
+    # https://vm.example/board. Used for OAuth issuer/resource URLs and the MCP URL shown in the UI.
+    public_url: str = "http://localhost:8080"
 
 
 @lru_cache

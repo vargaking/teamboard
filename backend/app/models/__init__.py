@@ -17,7 +17,8 @@ class User(Model):
     boards: fields.ManyToManyRelation["Board"]
     assigned_cards: fields.ManyToManyRelation["Card"]
     reviewing_cards: fields.ManyToManyRelation["Card"]
-    ai_settings: fields.ReverseRelation["UserAISettings"]
+    api_tokens: fields.ReverseRelation["ApiToken"]
+    oauth_codes: fields.ReverseRelation["OAuthAuthorizationCode"]
 
     class Meta:
         table = "users"
@@ -109,16 +110,55 @@ class Comment(Model):
         ordering = ["created_at", "id"]
 
 
-class UserAISettings(Model):
-    """Per-user bring-your-own-key AI configuration. `api_key_encrypted` is a Fernet token (see app/ai/crypto.py)."""
+# ---------- MCP / OAuth ----------
+class OAuthClient(Model):
+    """A dynamically registered OAuth client (e.g. claude.ai). `metadata` is the registration document."""
 
     id = fields.IntField(primary_key=True)
-    user: fields.OneToOneRelation[User] = fields.OneToOneField("models.User", related_name="ai_settings", on_delete=fields.CASCADE)
-    provider = fields.CharField(max_length=20)  # "anthropic" | "openai"
-    model = fields.CharField(max_length=120, null=True)
-    api_key_encrypted = fields.TextField()
-    key_hint = fields.CharField(max_length=8)  # last 4 characters, for display only
-    updated_at = fields.DatetimeField(auto_now=True)
+    client_id = fields.CharField(max_length=64, unique=True)
+    metadata = fields.JSONField()
+    created_at = fields.DatetimeField(auto_now_add=True)
 
     class Meta:
-        table = "user_ai_settings"
+        table = "oauth_clients"
+
+
+class OAuthAuthorizationCode(Model):
+    id = fields.IntField(primary_key=True)
+    code = fields.CharField(max_length=128, unique=True)
+    client_id = fields.CharField(max_length=64)
+    user: fields.ForeignKeyRelation[User] = fields.ForeignKeyField("models.User", related_name="oauth_codes", on_delete=fields.CASCADE)
+    scopes = fields.JSONField()
+    code_challenge = fields.CharField(max_length=128)
+    redirect_uri = fields.CharField(max_length=2048)
+    redirect_uri_provided_explicitly = fields.BooleanField()
+    resource = fields.CharField(max_length=2048, null=True)
+    expires_at = fields.FloatField()
+
+    class Meta:
+        table = "oauth_codes"
+
+
+class ApiToken(Model):
+    """Bearer tokens accepted by the MCP endpoint. Only a SHA-256 hash is stored.
+
+    kind: "access" / "refresh" (issued by the OAuth flow, tied to an OAuth client) or
+          "personal" (created by the user in the UI for Claude Code / scripts; no expiry).
+    """
+
+    id = fields.IntField(primary_key=True)
+    token_hash = fields.CharField(max_length=64, unique=True)
+    kind = fields.CharField(max_length=10)
+    name = fields.CharField(max_length=120, default="")
+    prefix = fields.CharField(max_length=12, default="")  # first characters, for display only
+    client_id = fields.CharField(max_length=64, null=True)
+    user: fields.ForeignKeyRelation[User] = fields.ForeignKeyField("models.User", related_name="api_tokens", on_delete=fields.CASCADE)
+    scopes = fields.JSONField()
+    resource = fields.CharField(max_length=2048, null=True)
+    expires_at = fields.DatetimeField(null=True)
+    revoked = fields.BooleanField(default=False)
+    created_at = fields.DatetimeField(auto_now_add=True)
+    last_used_at = fields.DatetimeField(null=True)
+
+    class Meta:
+        table = "api_tokens"

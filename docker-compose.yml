@@ -26,6 +26,8 @@ services:
       SEED_ON_STARTUP: ${SEED_ON_STARTUP:-true}
       SEED_PASSWORD: ${SEED_PASSWORD:-changeme}
       CORS_ORIGINS: ${CORS_ORIGINS:-["http://localhost:${WEB_PORT:-8080}"]}
+      # Public URL users reach the app at (incl. /board prefix if any). Needed for the Claude connector (OAuth).
+      PUBLIC_URL: ${PUBLIC_URL:-http://localhost:${WEB_PORT:-8080}}
     # The WebSocket hub is in-process: keep a single worker (see README) unless you add Redis pub/sub.
     expose:
       - "8000"

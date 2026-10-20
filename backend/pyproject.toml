@@ -14,9 +14,7 @@ dependencies = [
     "pydantic>=2.8",
     "pydantic-settings>=2.4",
     "websockets>=12",
-    "anthropic>=0.40",
-    "openai>=1.50",
-    "cryptography>=43",
+    "mcp>=2.0",
 ]
 
 [project.optional-dependencies]

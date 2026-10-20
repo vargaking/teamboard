@@ -67,32 +67,23 @@ type Token = { access_token: string; token_type: "bearer"; user: User };
 - Clients treat every event as an invalidation hint and refetch the board; the server never pushes board state itself.
 - The hub is in-process (single uvicorn worker). Scaling to several workers needs a Redis pub/sub backend — see README.
 
-## AI (bring-your-own key)
-Each user stores their own provider key (encrypted at rest with a key derived from `SECRET_KEY`). All AI endpoints
-return 409 `{"detail": "AI is not configured. Add an API key in AI settings."}` when the caller has no key/model,
-and 502 with the provider's message when the provider call fails. AI never writes to the board: every endpoint
-returns a *proposal* the client applies through the normal endpoints after the user confirms.
 
-```ts
-type AIProvider = "anthropic" | "openai";
-type AISettings = { provider: AIProvider | null; model: string | null; has_key: boolean; key_hint: string | null }; // key_hint = "…" + last 4 chars
-type AIModel = { id: string; label: string };
-type ChatMessage = { role: "user" | "assistant"; content: string };
-type CardAssistAction = "describe" | "acceptance_criteria" | "subtasks" | "labels";
-type CardAssistResult =
-  | { action: "describe"; description: string }                         // markdown; proposed replacement for card.description
-  | { action: "acceptance_criteria"; criteria: string[] }               // client appends as a "## Acceptance criteria" checklist to the description
-  | { action: "subtasks"; subtasks: { title: string; description: string }[] }
-  | { action: "labels"; label_ids: number[]; new_labels: { name: string; color: string }[] }; // existing labels to add + suggested new ones
-type DraftCard = { title: string; description: string; column_id: number; label_ids: number[]; assignee_ids: number[]; due_date: string | null };
-```
+## MCP / Connect to Claude
+TeamBoard is an MCP server (streamable HTTP) at `PUBLIC_URL/api/mcp`, protected by Bearer tokens. Claude acts as the
+user who authorized the connection and is subject to the same board access checks as the UI.
 
-- `GET    /api/ai/settings` → `AISettings`
-- `PUT    /api/ai/settings` body `{provider, api_key?, model?}` → `AISettings` (omit `api_key` to keep the stored key; `model` may be set later)
-- `DELETE /api/ai/settings` → 204 (removes key, provider and model)
-- `GET    /api/ai/models` → `AIModel[]` (live list from the provider using the stored key; 409 if no key; 502 on bad key)
-- `POST   /api/ai/test` → `{ok: true, model: string}` (one tiny completion; 502 with the provider message on failure)
-- `POST   /api/ai/cards/{id}/assist` body `{action: CardAssistAction, instructions?: string}` → `CardAssistResult` (board member only; the model sees the card, its column, board labels and members)
-- `POST   /api/ai/boards/{id}/summary` → `{summary: string}` (markdown: progress, blocked/overdue, per-person workload, suggested focus)
-- `POST   /api/ai/boards/{id}/draft-cards` body `{text: string, column_id?: number}` → `{cards: DraftCard[]}` (`column_id` defaults to the first column; the model may pick another existing column; `label_ids`/`assignee_ids` only contain existing ids)
-- `POST   /api/ai/boards/{id}/chat` body `{messages: ChatMessage[]}` (last message must be `user`; max 30 messages, 8000 chars each) → `{reply: string}` (markdown; the model gets the full current board as context on every call — stateless)
+Two ways to get a token:
+- **OAuth 2.1** (claude.ai custom connectors): dynamic client registration + PKCE, served by the backend under
+  `PUBLIC_URL/api/oauth/{register,authorize,token,revoke}`, with discovery at
+  `/.well-known/oauth-protected-resource<prefix>/api/mcp` and `/.well-known/oauth-authorization-server<prefix>/api/oauth`.
+  The authorize step redirects the user to the SPA page `/oauth/consent?req=<signed request>`; the SPA calls
+  `GET /api/oauth/consent?req=…` → `{client_name, scopes, redirect_host}` and `POST /api/oauth/consent {req, approve}` →
+  `{redirect_to}`, then navigates there. Requires `PUBLIC_URL` to be HTTPS (or localhost).
+- **Personal tokens** (Claude Code, scripts): `GET /api/tokens` → `{id, name, prefix, created_at, last_used_at}[]`,
+  `POST /api/tokens {name}` → the same plus `token` (shown once), `DELETE /api/tokens/{id}` → 204.
+  Use as `Authorization: Bearer tb_pat_…`.
+
+`GET /api/mcp-info` → `{mcp_url, oauth_enabled, public_url}` for the "Connect to Claude" UI.
+
+Tools: `list_boards`, `get_board`, `get_card`, `search_cards`, `list_users`, `create_card`, `update_card`, `move_card`,
+`add_comment`, `create_column`. Mutations broadcast the same live-update events as the REST API.
