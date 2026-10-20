@@ -42,7 +42,7 @@ if sum(len(c["cards"]) for c in board["columns"]) > 7:
     sys.exit(0)
 
 labels = {l["name"]: l["id"] for l in board["labels"]}
-for name, color in [("strategy", "#722ed1"), ("infra", "#13c2c2")]:
+for name, color in [("strategy", "#722ed1")]:
     labels[name] = call("POST", f"/api/boards/{main_id}/labels", admin, {"name": name, "color": color})["id"]
 cols = {c["title"]: c["id"] for c in board["columns"]}
 cards = {c["title"]: c["id"] for col in board["columns"] for c in col["cards"]}
@@ -61,13 +61,14 @@ def card(col, title, lab, assignees, days, reviewers=(), description=""):
 
 
 card("To do", "Equity curve chart on results page", ["frontend"], ["peera"], 9)
-card("To do", "Docker sandbox for strategy runs", ["infra", "backend"], ["vladimir", "botond"], 12)
 card("In progress", "Market data importer (CSV + Yahoo)", ["backend"], ["izzet"], 4, ["miki"])
 card("In progress", "Strategy upload API", ["backend", "strategy"], ["botond", "ramtin"], 6)
 card("Review", "Sharpe ratio & drawdown metrics", ["strategy"], ["miki"], 0, ["andrei", "daniel"])
 card("Review", "Fix timezone bug in candle data", ["bug", "backend"], ["gergo"], -1, ["izzet"])
 card("Done", "Dashboard wireframes", ["frontend"], ["peera", "andrada"], -3)
 card("Done", "Sprint 2 retrospective notes", ["docs"], ["andrada"], -6)
+# The repo is set up by now: keeps "To do" short so a card Claude adds later is on screen.
+call("POST", f"/api/cards/{cards['Set up repo, CI and Docker compose']}/move", admin, {"column_id": cols["Done"], "position": 0})
 
 # The card we open in the "card details" scene.
 detail = cards["Backtest configuration form"]
