@@ -2,7 +2,7 @@ import { lazy, Suspense, useState } from 'react';
 import { Link, Outlet, useLocation, useNavigate } from 'react-router-dom';
 import { Button, Dropdown, Layout, Space, Typography } from 'antd';
 import type { MenuProps } from 'antd';
-import { ApiOutlined, AppstoreOutlined, KeyOutlined, LogoutOutlined, ProjectOutlined } from '@ant-design/icons';
+import { ApiOutlined, AppstoreOutlined, KeyOutlined, LogoutOutlined, ProjectOutlined, TeamOutlined } from '@ant-design/icons';
 import { useCurrentUser, useAuth } from '../auth/AuthContext';
 import { UserAvatar } from './UserAvatar';
 import { ChangePasswordModal } from './ChangePasswordModal';
@@ -49,7 +49,8 @@ export function AppLayout() {
     }
   };
 
-  const onBoardsPage = location.pathname === '/';
+  const onBoardsPage = location.pathname === '/' || location.pathname.startsWith('/boards');
+  const onTeamPage = location.pathname === '/team';
 
   return (
     <Layout className="app-layout">
@@ -59,9 +60,26 @@ export function AppLayout() {
             <ProjectOutlined />
             <span>TeamBoard</span>
           </Link>
-          <Button type={onBoardsPage ? 'primary' : 'text'} ghost={onBoardsPage} icon={<AppstoreOutlined />} onClick={() => navigate('/')}>
-            Boards
-          </Button>
+          <nav className="app-nav" aria-label="Main">
+            <Button
+              type={onBoardsPage ? 'primary' : 'text'}
+              ghost={onBoardsPage}
+              icon={<AppstoreOutlined />}
+              onClick={() => navigate('/')}
+              aria-current={onBoardsPage ? 'page' : undefined}
+            >
+              Boards
+            </Button>
+            <Button
+              type={onTeamPage ? 'primary' : 'text'}
+              ghost={onTeamPage}
+              icon={<TeamOutlined />}
+              onClick={() => navigate('/team')}
+              aria-current={onTeamPage ? 'page' : undefined}
+            >
+              Team
+            </Button>
+          </nav>
         </Space>
         <Space size={4} align="center">
           <ThemeToggle />

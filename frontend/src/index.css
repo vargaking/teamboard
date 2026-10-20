@@ -734,3 +734,26 @@ body {
   background: var(--chip-bg);
   border-radius: 6px;
 }
+
+/* ---------- team & invites ---------- */
+
+.app-nav {
+  display: inline-flex;
+  gap: 4px;
+}
+
+.mono-input input,
+.mono-input.ant-input {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+}
+
+.invite-for {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.35;
+}
+
+.invite-headline.ant-typography {
+  font-size: 15px;
+  margin: 4px 0 16px;
+}

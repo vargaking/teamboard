@@ -6,4 +6,6 @@ export const queryKeys = {
   mcpInfo: ['mcp-info'] as const,
   tokens: ['tokens'] as const,
   consent: (req: string) => ['oauth-consent', req] as const,
+  invites: ['invites'] as const,
+  inviteInfo: (token: string) => ['invite-info', token] as const,
 };

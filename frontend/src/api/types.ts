@@ -217,3 +217,45 @@ export type TrelloImportOptions = {
 
 export type TrelloPreviewRequest = { export: TrelloExport };
 export type TrelloImportRequest = { export: TrelloExport; options?: TrelloImportOptions };
+
+// ---- Team management & invites ----
+
+export type UserCreate = { email: string; name: string; password: string; is_admin?: boolean };
+export type UserUpdate = { name?: string; is_admin?: boolean; password?: string };
+
+export type Invite = {
+  id: number;
+  email: string | null;
+  name: string | null;
+  board_id: number | null;
+  board_title: string | null;
+  created_by: User;
+  created_at: string;
+  expires_at: string;
+  max_uses: number;
+  uses: number;
+  revoked: boolean;
+  /** returned ONLY by POST /api/invites (the token is shown once) */
+  url: string | null;
+};
+
+export type InviteCreate = {
+  email?: string;
+  name?: string;
+  board_id?: number;
+  /** 1..30, default 7 */
+  expires_in_days?: number;
+  /** 1..100, default 1 */
+  max_uses?: number;
+};
+
+export type InviteInfo = {
+  valid: boolean;
+  reason: string | null;
+  email: string | null;
+  name: string | null;
+  board_title: string | null;
+  invited_by: string;
+};
+
+export type InviteAccept = { name: string; email: string; password: string };

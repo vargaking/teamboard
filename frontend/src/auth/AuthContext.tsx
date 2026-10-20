@@ -2,13 +2,15 @@ import { createContext, useCallback, useContext, useEffect, useMemo, useState, t
 import { useQueryClient } from '@tanstack/react-query';
 import * as authApi from '../api/auth';
 import { clearToken, getToken, setToken } from '../api/client';
-import type { User } from '../api/types';
+import type { Token, User } from '../api/types';
 
 export type AuthContextValue = {
   user: User | null;
   /** true while the initial GET /auth/me is in flight */
   loading: boolean;
   login: (email: string, password: string) => Promise<User>;
+  /** Adopt a token issued elsewhere (e.g. accepting an invite) exactly like a login. */
+  loginWithToken: (token: Token) => User;
   logout: () => void;
   setUser: (user: User) => void;
 };
@@ -43,15 +45,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     };
   }, []);
 
-  const login = useCallback(
-    async (email: string, password: string): Promise<User> => {
-      const token = await authApi.login({ email, password });
+  const loginWithToken = useCallback(
+    (token: Token): User => {
       setToken(token.access_token);
       queryClient.clear();
       setUserState(token.user);
       return token.user;
     },
     [queryClient],
+  );
+
+  const login = useCallback(
+    async (email: string, password: string): Promise<User> => loginWithToken(await authApi.login({ email, password })),
+    [loginWithToken],
   );
 
   const logout = useCallback(() => {
@@ -63,8 +69,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const setUser = useCallback((next: User) => setUserState(next), []);
 
   const value = useMemo<AuthContextValue>(
-    () => ({ user, loading, login, logout, setUser }),
-    [user, loading, login, logout, setUser],
+    () => ({ user, loading, login, loginWithToken, logout, setUser }),
+    [user, loading, login, loginWithToken, logout, setUser],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
