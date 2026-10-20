@@ -1,28 +1,24 @@
-import { useState } from 'react';
+import { lazy, Suspense, useState } from 'react';
 import { Link, Outlet, useLocation, useNavigate } from 'react-router-dom';
 import { Button, Dropdown, Layout, Space, Typography } from 'antd';
 import type { MenuProps } from 'antd';
-import { AppstoreOutlined, KeyOutlined, LogoutOutlined, ProjectOutlined, ThunderboltOutlined } from '@ant-design/icons';
+import { ApiOutlined, AppstoreOutlined, KeyOutlined, LogoutOutlined, ProjectOutlined } from '@ant-design/icons';
 import { useCurrentUser, useAuth } from '../auth/AuthContext';
 import { UserAvatar } from './UserAvatar';
 import { ChangePasswordModal } from './ChangePasswordModal';
-import { AIContextProvider, useAI } from './ai/AIContext';
+import { ThemeToggle } from './ThemeToggle';
+
+// Code-split: the modal pulls in Table/Tabs, which nothing on the initial page load needs.
+const ConnectClaudeModal = lazy(() => import('./ConnectClaudeModal').then((m) => ({ default: m.ConnectClaudeModal })));
 
 export function AppLayout() {
-  return (
-    <AIContextProvider>
-      <AppLayoutInner />
-    </AIContextProvider>
-  );
-}
-
-function AppLayoutInner() {
   const user = useCurrentUser();
-  const { openSettings } = useAI();
   const { logout } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
   const [passwordOpen, setPasswordOpen] = useState(false);
+  const [connectOpen, setConnectOpen] = useState(false);
+  const [connectMounted, setConnectMounted] = useState(false);
 
   const menuItems: MenuProps['items'] = [
     {
@@ -30,19 +26,22 @@ function AppLayoutInner() {
       type: 'group',
       label: (
         <div style={{ lineHeight: 1.3 }}>
-          <div style={{ fontWeight: 600, color: 'rgba(0,0,0,0.88)' }}>{user.name}</div>
+          <div style={{ fontWeight: 600 }}>{user.name}</div>
           <div style={{ fontSize: 12 }}>{user.email}</div>
         </div>
       ),
     },
     { type: 'divider' },
-    { key: 'ai', icon: <ThunderboltOutlined />, label: 'AI settings' },
+    { key: 'connect', icon: <ApiOutlined />, label: 'Connect to Claude' },
     { key: 'password', icon: <KeyOutlined />, label: 'Change password' },
     { key: 'logout', icon: <LogoutOutlined />, label: 'Log out', danger: true },
   ];
 
   const onMenuClick: MenuProps['onClick'] = ({ key }) => {
-    if (key === 'ai') openSettings();
+    if (key === 'connect') {
+      setConnectMounted(true);
+      setConnectOpen(true);
+    }
     if (key === 'password') setPasswordOpen(true);
     if (key === 'logout') {
       logout();
@@ -64,17 +63,25 @@ function AppLayoutInner() {
             Boards
           </Button>
         </Space>
-        <Dropdown menu={{ items: menuItems, onClick: onMenuClick }} trigger={['click']} placement="bottomRight">
-          <button type="button" className="avatar-button" aria-label="Account menu">
-            <UserAvatar user={user} tooltip={false} />
-            <Typography.Text className="header-username">{user.name}</Typography.Text>
-          </button>
-        </Dropdown>
+        <Space size={4} align="center">
+          <ThemeToggle />
+          <Dropdown menu={{ items: menuItems, onClick: onMenuClick }} trigger={['click']} placement="bottomRight">
+            <button type="button" className="avatar-button" aria-label="Account menu">
+              <UserAvatar user={user} tooltip={false} />
+              <Typography.Text className="header-username">{user.name}</Typography.Text>
+            </button>
+          </Dropdown>
+        </Space>
       </Layout.Header>
       <Layout.Content className="app-content">
         <Outlet />
       </Layout.Content>
       <ChangePasswordModal open={passwordOpen} onClose={() => setPasswordOpen(false)} />
+      {connectMounted && (
+        <Suspense fallback={null}>
+          <ConnectClaudeModal open={connectOpen} onClose={() => setConnectOpen(false)} />
+        </Suspense>
+      )}
     </Layout>
   );
 }

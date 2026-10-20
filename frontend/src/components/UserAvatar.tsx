@@ -27,7 +27,7 @@ type GroupProps = {
 
 export function UserAvatarGroup({ users, size = 'small', max = 4, tooltips = true }: GroupProps) {
   return (
-    <Avatar.Group size={size} max={{ count: max, style: { backgroundColor: '#d9d9d9', color: '#595959' } }}>
+    <Avatar.Group size={size} max={{ count: max, style: { backgroundColor: 'var(--badge-bg)', color: 'var(--badge-text)' } }}>
       {users.map((u) => (
         <UserAvatar key={u.id} user={u} size={size} tooltip={tooltips} />
       ))}

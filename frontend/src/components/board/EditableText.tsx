@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, type CSSProperties } from 'react';
+import { forwardRef, useEffect, useImperativeHandle, useRef, useState, type CSSProperties } from 'react';
 import { Input, type InputRef } from 'antd';
 
 type Props = {
@@ -15,8 +15,10 @@ type Props = {
   size?: 'small' | 'middle' | 'large';
 };
 
+export type EditableTextHandle = { startEditing: () => void };
+
 /** Click to edit; Enter or blur saves, Esc cancels. */
-export function EditableText({
+export const EditableText = forwardRef<EditableTextHandle, Props>(function EditableText({
   value,
   onSave,
   className,
@@ -27,8 +29,9 @@ export function EditableText({
   maxLength = 200,
   allowEmpty = false,
   size = 'middle',
-}: Props) {
+}, ref) {
   const [editing, setEditing] = useState(false);
+  useImperativeHandle(ref, () => ({ startEditing: () => setEditing(true) }), []);
   const [draft, setDraft] = useState(value);
   const inputRef = useRef<InputRef>(null);
   const cancelledRef = useRef(false);
@@ -99,4 +102,4 @@ export function EditableText({
       {value || <span className="editable-placeholder">{placeholder}</span>}
     </span>
   );
-}
+});

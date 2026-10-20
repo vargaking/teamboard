@@ -3,6 +3,7 @@ export const queryKeys = {
   board: (boardId: number) => ['board', boardId] as const,
   users: ['users'] as const,
   comments: (cardId: number) => ['comments', cardId] as const,
-  aiSettings: ['ai', 'settings'] as const,
-  aiModels: (provider: string) => ['ai', 'models', provider] as const,
+  mcpInfo: ['mcp-info'] as const,
+  tokens: ['tokens'] as const,
+  consent: (req: string) => ['oauth-consent', req] as const,
 };

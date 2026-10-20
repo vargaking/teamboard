@@ -1,5 +1,6 @@
-import { useCallback, useMemo, useState } from 'react';
+import { useCallback, useMemo, useRef, useState } from 'react';
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
+import { useQueryClient } from '@tanstack/react-query';
 import { DragDropContext, Droppable } from '@hello-pangea/dnd';
 import { AxiosError } from 'axios';
 import { App, Button, Result, Space, Spin } from 'antd';
@@ -8,10 +9,15 @@ import type { BoardDetail, Card, User } from '../api/types';
 import { useCurrentUser } from '../auth/AuthContext';
 import { BoardColumn } from '../components/board/BoardColumn';
 import { BoardHeader, type PersonFilter } from '../components/board/BoardHeader';
+import { BoardViewContext, type BoardViewActions } from '../components/board/BoardViewContext';
+import { ContextMenu } from '../components/ContextMenu';
+import { queryKeys } from '../hooks/queryKeys';
 import { CardModal } from '../components/board/CardModal';
-import { InlineAddInput } from '../components/board/InlineAddInput';
+import { InlineAddInput, type InlineAddInputHandle } from '../components/board/InlineAddInput';
 import { COLUMN_DROPPABLE_ID, DND_TYPE_COLUMN, useBoardDnd } from '../hooks/useBoardDnd';
 import { useBoard, useCreateColumn } from '../hooks/useBoards';
+import { PlusOutlined } from '@ant-design/icons';
+import type { MenuProps } from 'antd';
 import { useBoardSocket } from '../hooks/useBoardSocket';
 import { findCard } from '../utils/board';
 
@@ -73,8 +79,11 @@ function BoardView({ board }: { board: BoardDetail }) {
   const openCardId = openCardParam !== null ? Number(openCardParam) : null;
   const openCard = openCardId !== null && Number.isInteger(openCardId) ? findCard(board, openCardId) : null;
 
+  const addColumnRef = useRef<InlineAddInputHandle>(null);
+  const queryClient = useQueryClient();
+
   const openCardModal = useCallback(
-    (cardId: number) =>
+    (cardId: number) => {
       setSearchParams(
         (prev) => {
           const next = new URLSearchParams(prev);
@@ -82,78 +91,105 @@ function BoardView({ board }: { board: BoardDetail }) {
           return next;
         },
         { replace: false },
-      ),
+      );
+    },
     [setSearchParams],
   );
-  const closeCardModal = useCallback(
-    () =>
-      setSearchParams(
-        (prev) => {
-          const next = new URLSearchParams(prev);
-          next.delete('card');
-          return next;
-        },
-        { replace: true },
-      ),
-    [setSearchParams],
+  const closeCardModal = useCallback(() => {
+    setSearchParams(
+      (prev) => {
+        const next = new URLSearchParams(prev);
+        next.delete('card');
+        return next;
+      },
+      { replace: true },
+    );
+  }, [setSearchParams]);
+
+  const boardId = board.id;
+  const viewActions = useMemo<BoardViewActions>(
+    () => ({
+      boardId,
+      getBoard: () => queryClient.getQueryData<BoardDetail>(queryKeys.board(boardId)),
+      openCard: openCardModal,
+      startAddColumn: () => addColumnRef.current?.open(),
+    }),
+    [boardId, openCardModal, queryClient],
   );
 
+  const canvasMenuItems = (): MenuProps['items'] => [
+    { key: 'add-column', icon: <PlusOutlined />, label: 'Add column' },
+  ];
+  const onCanvasMenu = (key: string) => {
+    if (key === 'add-column') viewActions.startAddColumn();
+  };
+
   return (
-    <div className="board-page">
-      <BoardHeader
-        board={board}
-        liveStatus={liveStatus}
-        assigneeFilter={assigneeFilter}
-        onAssigneeFilterChange={setAssigneeFilter}
-        reviewerFilter={reviewerFilter}
-        onReviewerFilterChange={setReviewerFilter}
-        search={search}
-        onSearchChange={setSearch}
-      />
-      <DragDropContext onDragEnd={onDragEnd}>
-        <Droppable droppableId={COLUMN_DROPPABLE_ID} direction="horizontal" type={DND_TYPE_COLUMN}>
-          {(provided) => (
-            <div className="board-canvas" ref={provided.innerRef} {...provided.droppableProps}>
-              {board.columns.map((column, index) => (
-                <BoardColumn
-                  key={column.id}
-                  boardId={board.id}
-                  column={column}
-                  visibleCards={visibleByColumn.get(column.id) ?? column.cards}
-                  filtered={filterActive}
-                  index={index}
-                  onOpenCard={openCardModal}
-                />
-              ))}
-              {provided.placeholder}
-              <div className="add-column">
-                <InlineAddInput
-                  buttonLabel="Add column"
-                  placeholder="Column title"
-                  submitLabel="Add column"
-                  loading={createColumn.isPending}
-                  onSubmit={(title) =>
-                    createColumn.mutateAsync(title).catch((err: unknown) => {
-                      void message.error(getErrorMessage(err, 'Could not add column'));
-                      throw err;
-                    })
-                  }
-                />
-              </div>
-            </div>
-          )}
-        </Droppable>
-      </DragDropContext>
-      {openCard && (
-        <CardModal
-          key={openCard.card.id}
+    <BoardViewContext.Provider value={viewActions}>
+      <div className="board-page">
+        <BoardHeader
           board={board}
-          card={openCard.card}
-          column={openCard.column}
-          onClose={closeCardModal}
+          liveStatus={liveStatus}
+          assigneeFilter={assigneeFilter}
+          onAssigneeFilterChange={setAssigneeFilter}
+          reviewerFilter={reviewerFilter}
+          onReviewerFilterChange={setReviewerFilter}
+          search={search}
+          onSearchChange={setSearch}
         />
-      )}
-    </div>
+        <ContextMenu
+          buildItems={canvasMenuItems}
+          onSelect={onCanvasMenu}
+          className="board-canvas-wrap"
+          ariaLabel="Board canvas"
+        >
+          <DragDropContext onDragEnd={onDragEnd}>
+            <Droppable droppableId={COLUMN_DROPPABLE_ID} direction="horizontal" type={DND_TYPE_COLUMN}>
+              {(provided) => (
+                <div className="board-canvas" ref={provided.innerRef} {...provided.droppableProps}>
+                  {board.columns.map((column, index) => (
+                    <BoardColumn
+                      key={column.id}
+                      boardId={board.id}
+                      column={column}
+                      visibleCards={visibleByColumn.get(column.id) ?? column.cards}
+                      filtered={filterActive}
+                      index={index}
+                      onOpenCard={openCardModal}
+                    />
+                  ))}
+                  {provided.placeholder}
+                  <div className="add-column">
+                    <InlineAddInput
+                      ref={addColumnRef}
+                      buttonLabel="Add column"
+                      placeholder="Column title"
+                      submitLabel="Add column"
+                      loading={createColumn.isPending}
+                      onSubmit={(title) =>
+                        createColumn.mutateAsync(title).catch((err: unknown) => {
+                          void message.error(getErrorMessage(err, 'Could not add column'));
+                          throw err;
+                        })
+                      }
+                    />
+                  </div>
+                </div>
+              )}
+            </Droppable>
+          </DragDropContext>
+        </ContextMenu>
+        {openCard && (
+          <CardModal
+            key={openCard.card.id}
+            board={board}
+            card={openCard.card}
+            column={openCard.column}
+            onClose={closeCardModal}
+            />
+        )}
+      </div>
+    </BoardViewContext.Provider>
   );
 }
 

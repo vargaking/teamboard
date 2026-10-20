@@ -2,6 +2,7 @@ import type { ReactNode } from 'react';
 import { Navigate, useLocation } from 'react-router-dom';
 import { Spin } from 'antd';
 import { useAuth } from './AuthContext';
+import { loginRouteFor } from '../utils/basePath';
 
 export function RequireAuth({ children }: { children: ReactNode }) {
   const { user, loading } = useAuth();
@@ -15,7 +16,8 @@ export function RequireAuth({ children }: { children: ReactNode }) {
     );
   }
   if (user === null) {
-    return <Navigate to="/login" replace state={{ from: location.pathname }} />;
+    // Preserve the full path + query (e.g. the OAuth consent request) through the login.
+    return <Navigate to={loginRouteFor(`${location.pathname}${location.search}`)} replace />;
   }
   return <>{children}</>;
 }

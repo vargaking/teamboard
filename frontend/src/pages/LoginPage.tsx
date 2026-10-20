@@ -1,34 +1,28 @@
 import { useState } from 'react';
-import { Navigate, useLocation, useNavigate } from 'react-router-dom';
+import { Navigate, useNavigate, useSearchParams } from 'react-router-dom';
 import { App, Button, Card, Form, Input, Typography } from 'antd';
 import { LockOutlined, MailOutlined, ProjectOutlined } from '@ant-design/icons';
 import { useAuth } from '../auth/AuthContext';
 import { getErrorMessage } from '../api/client';
+import { safeNextPath } from '../utils/basePath';
 
 type Values = { email: string; password: string };
-
-function redirectTarget(state: unknown): string {
-  if (typeof state === 'object' && state !== null && 'from' in state) {
-    const from = (state as { from: unknown }).from;
-    if (typeof from === 'string' && from.startsWith('/') && from !== '/login') return from;
-  }
-  return '/';
-}
 
 export function LoginPage() {
   const { user, login } = useAuth();
   const { message } = App.useApp();
   const navigate = useNavigate();
-  const location = useLocation();
+  const [searchParams] = useSearchParams();
+  const next = safeNextPath(searchParams.get('next'));
   const [submitting, setSubmitting] = useState(false);
 
-  if (user) return <Navigate to={redirectTarget(location.state)} replace />;
+  if (user) return <Navigate to={next} replace />;
 
   const onFinish = async (values: Values) => {
     setSubmitting(true);
     try {
       await login(values.email.trim(), values.password);
-      navigate(redirectTarget(location.state), { replace: true });
+      navigate(next, { replace: true });
     } catch (err) {
       void message.error(getErrorMessage(err, 'Login failed'));
       setSubmitting(false);

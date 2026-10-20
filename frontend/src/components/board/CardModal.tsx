@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useState } from 'react';
 import {
   Alert,
   App,
@@ -17,7 +17,7 @@ import {
   Typography,
 } from 'antd';
 import { DeleteOutlined } from '@ant-design/icons';
-import type { BoardDetail, Card, CardAssistAction, CardAssistResult, CardUpdate, Column } from '../../api/types';
+import type { BoardDetail, Card, CardUpdate, Column } from '../../api/types';
 import { getErrorMessage } from '../../api/client';
 import { useCurrentUser } from '../../auth/AuthContext';
 import { useComments, useCreateComment, useDeleteCard, useDeleteComment, useUpdateCard } from '../../hooks/useCards';
@@ -25,18 +25,12 @@ import { DATE_FORMAT, dayjs, getDueStatus, isDoneColumnTitle, parseDueDate, pars
 import { LabelTag } from '../LabelTag';
 import { UserAvatar } from '../UserAvatar';
 import { MemberSelect } from './MemberSelect';
-import { AssistPanel, CardAIButton } from '../ai/CardAssist';
-import { AITheme } from '../ai/aiTheme';
-import { useAI } from '../ai/AIContext';
-import { useCardAssist } from '../../hooks/useAI';
 
 type Props = {
   board: BoardDetail;
   card: Card;
   column: Column;
   onClose: () => void;
-  /** Start this AI assist action as soon as the modal opens (from the card context menu). */
-  initialAssist?: CardAssistAction | null;
 };
 
 function FieldLabel({ children }: { children: string }) {
@@ -158,7 +152,7 @@ function Comments({ boardId, cardId }: { boardId: number; cardId: number }) {
   );
 }
 
-export function CardModal({ board, card, column, onClose, initialAssist }: Props) {
+export function CardModal({ board, card, column, onClose }: Props) {
   const { message } = App.useApp();
   const updateCard = useUpdateCard(board.id);
   const deleteCard = useDeleteCard(board.id);
@@ -172,43 +166,6 @@ export function CardModal({ board, card, column, onClose, initialAssist }: Props
   useEffect(() => {
     if (!descriptionDirty) setDescription(card.description);
   }, [card.description, descriptionDirty]);
-
-  // ---- AI assist ----
-  const { handleAIError } = useAI();
-  const assist = useCardAssist(card.id);
-  const [assistLoading, setAssistLoading] = useState<CardAssistAction | null>(null);
-  const [assistResult, setAssistResult] = useState<CardAssistResult | null>(null);
-  const assistRequestRef = useRef(0);
-
-  const runAssist = (action: CardAssistAction, instructions?: string) => {
-    const requestId = ++assistRequestRef.current;
-    setAssistResult(null);
-    setAssistLoading(action);
-    assist.mutate(
-      { action, ...(instructions ? { instructions } : {}) },
-      {
-        onSuccess: (result) => {
-          if (requestId === assistRequestRef.current) setAssistResult(result);
-        },
-        onError: (err) => {
-          if (requestId === assistRequestRef.current) handleAIError(err, 'AI request failed');
-        },
-        onSettled: () => {
-          if (requestId === assistRequestRef.current) setAssistLoading(null);
-        },
-      },
-    );
-  };
-
-  // Run the action requested from the context menu once (ref guard survives StrictMode re-mount).
-  const initialAssistStartedRef = useRef(false);
-  useEffect(() => {
-    if (initialAssist && !initialAssistStartedRef.current) {
-      initialAssistStartedRef.current = true;
-      runAssist(initialAssist);
-    }
-    // Intentionally keyed on initialAssist only: run once when the modal opens.
-  }, [initialAssist]);
 
   const save = (update: CardUpdate, errorText: string, onSuccess?: () => void) => {
     updateCard.mutate(
@@ -263,30 +220,9 @@ export function CardModal({ board, card, column, onClose, initialAssist }: Props
         onPressEnter={(e) => e.currentTarget.blur()}
         aria-label="Card title"
       />
-      <div className="card-modal-subheader">
-        <Typography.Text type="secondary">
-          in column <Typography.Text strong>{column.title}</Typography.Text>
-        </Typography.Text>
-        <AITheme>
-          <CardAIButton loading={assistLoading !== null} onRun={runAssist} />
-        </AITheme>
-      </div>
-
-      <AITheme>
-        <AssistPanel
-          board={board}
-          card={card}
-          column={column}
-          currentDescription={description}
-          loadingAction={assistLoading}
-          result={assistResult}
-          onDone={(applied) => {
-            setAssistResult(null);
-            // An applied description change replaces any unsaved local edit.
-            if (applied) setDescriptionDirty(false);
-          }}
-        />
-      </AITheme>
+      <Typography.Text type="secondary">
+        in column <Typography.Text strong>{column.title}</Typography.Text>
+      </Typography.Text>
 
       <div className="card-modal-grid">
         <div>

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { forwardRef, useEffect, useImperativeHandle, useRef, useState } from 'react';
 import { Button, Input, Space } from 'antd';
 import { CloseOutlined, PlusOutlined } from '@ant-design/icons';
 
@@ -12,10 +12,22 @@ type Props = {
   className?: string;
 };
 
+export type InlineAddInputHandle = { open: () => void };
+
 /** "+ Add ..." button that turns into an input; Enter saves, Esc cancels. */
-export function InlineAddInput({ buttonLabel, placeholder, submitLabel, loading, onSubmit, className }: Props) {
+export const InlineAddInput = forwardRef<InlineAddInputHandle, Props>(function InlineAddInput(
+  { buttonLabel, placeholder, submitLabel, loading, onSubmit, className },
+  ref,
+) {
   const [editing, setEditing] = useState(false);
   const [value, setValue] = useState('');
+  const containerRef = useRef<HTMLDivElement>(null);
+  useImperativeHandle(ref, () => ({ open: () => setEditing(true) }), []);
+
+  // Bring the input into view when opened (e.g. from a context menu on a long column).
+  useEffect(() => {
+    if (editing) containerRef.current?.scrollIntoView({ block: 'nearest', inline: 'nearest' });
+  }, [editing]);
 
   const cancel = () => {
     setEditing(false);
@@ -45,7 +57,7 @@ export function InlineAddInput({ buttonLabel, placeholder, submitLabel, loading,
   }
 
   return (
-    <div className={className}>
+    <div className={className} ref={containerRef}>
       <Input
         autoFocus
         value={value}
@@ -66,4 +78,4 @@ export function InlineAddInput({ buttonLabel, placeholder, submitLabel, loading,
       </Space>
     </div>
   );
-}
+});
