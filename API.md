@@ -114,3 +114,24 @@ Mapping: lists → columns (Trello order), cards → cards (Trello order, `due` 
 names → hex; unnamed labels are named after their colour), checklists → appended to the description as markdown task lists,
 attachments → appended as a link list, `commentCard` actions → comments (authored by the mapped user, otherwise by the
 importer with a "Name (Trello):" prefix). Archived items are only imported with `include_archived`. The importer owns the board.
+
+## Team management & invites
+Admins only, except where noted. New users get initials and a colour generated from their name.
+
+```ts
+type Invite = { id: number; email: string | null; name: string | null; board_id: number | null; board_title: string | null;
+                created_by: User; created_at: string; expires_at: string; max_uses: number; uses: number; revoked: boolean; url: string | null };
+                // url is returned ONLY by POST (token shown once)
+type InviteInfo = { valid: boolean; reason: string | null; email: string | null; name: string | null; board_title: string | null; invited_by: string };
+```
+
+- `GET    /api/users` → `User[]` (any user; unchanged)
+- `POST   /api/users` body `{email, name, password, is_admin?}` → `User` (201; 409 if the email exists)
+- `PATCH  /api/users/{id}` body `{name?, is_admin?, password?}` → `User` (an admin cannot remove their own admin flag)
+- `POST   /api/invites` body `{email?, name?, board_id?, expires_in_days?: 1..30 (default 7), max_uses?: 1..100 (default 1)}` → `Invite` with `url`
+- `GET    /api/invites` → `Invite[]` (newest first, incl. used/expired/revoked)
+- `DELETE /api/invites/{id}` → 204 (revoke)
+- `GET    /api/invites/{token}/info` → `InviteInfo` (public)
+- `POST   /api/invites/{token}/accept` body `{name, email, password}` → `Token` (public; logs the new user in; 410 if invalid/expired/used; 409 if the email exists; `email` must equal the invite's email when the invite has one; the user is added to `board_id` if set)
+
+Invite URL: `<FRONTEND_URL or PUBLIC_URL>/invite/<token>`.

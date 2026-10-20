@@ -162,3 +162,26 @@ class ApiToken(Model):
 
     class Meta:
         table = "api_tokens"
+
+
+class Invite(Model):
+    """An invite link. Only the SHA-256 hash of the token is stored; the URL is shown once at creation."""
+
+    id = fields.IntField(primary_key=True)
+    token_hash = fields.CharField(max_length=64, unique=True)
+    email = fields.CharField(max_length=255, null=True)
+    name = fields.CharField(max_length=120, null=True)
+    board: fields.ForeignKeyNullableRelation[Board] = fields.ForeignKeyField(
+        "models.Board", related_name="invites", on_delete=fields.SET_NULL, null=True
+    )
+    created_by: fields.ForeignKeyRelation[User] = fields.ForeignKeyField(
+        "models.User", related_name="created_invites", on_delete=fields.CASCADE
+    )
+    created_at = fields.DatetimeField(auto_now_add=True)
+    expires_at = fields.DatetimeField()
+    max_uses = fields.IntField(default=1)
+    uses = fields.IntField(default=0)
+    revoked = fields.BooleanField(default=False)
+
+    class Meta:
+        table = "invites"
