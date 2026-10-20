@@ -72,6 +72,11 @@ export function ContextMenu({ buildItems, onSelect, children, className, style, 
       }}
       menu={{
         items: open ? buildItems() : [],
+        // rc-menu collapses open submenus on every item click unless `multiple` is set; we need
+        // them to stay open for KEEP_OPEN items (checkable labels). Nothing here is selectable,
+        // and the whole menu is closed explicitly for every other item.
+        selectable: false,
+        multiple: true,
         onClick: ({ key, domEvent }) => {
           domEvent.stopPropagation();
           const result = onSelect(key);
