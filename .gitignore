@@ -20,3 +20,5 @@ promo/public/captures/
 promo/**/*.webm
 promo/**/*.mp4
 promo/**/*.db
+promo/.work/
+promo/public/clips/
