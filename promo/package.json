@@ -1,0 +1,21 @@
+{
+  "name": "teamboard-promo",
+  "private": true,
+  "version": "1.0.0",
+  "description": "TeamBoard promo + how-to video (Remotion)",
+  "scripts": {
+    "studio": "remotion studio",
+    "render": "remotion render src/index.ts TeamBoardPromo out/teamboard-promo.mp4",
+    "render:preview": "remotion render src/index.ts TeamBoardPromo out/teamboard-preview-10s.mp4 --frames=0-299"
+  },
+  "dependencies": {
+    "@remotion/cli": "4.0.532",
+    "react": "18.3.1",
+    "react-dom": "18.3.1",
+    "remotion": "4.0.532"
+  },
+  "devDependencies": {
+    "@types/react": "18.3.12",
+    "typescript": "5.6.3"
+  }
+}

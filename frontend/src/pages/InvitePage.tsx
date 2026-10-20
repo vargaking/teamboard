@@ -2,7 +2,6 @@ import { useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { Alert, App, Button, Card, Form, Input, Result, Spin, Typography } from 'antd';
 import { LockOutlined, LogoutOutlined, MailOutlined, ProjectOutlined, UserOutlined } from '@ant-design/icons';
-import { listBoards } from '../api/boards';
 import { getErrorMessage } from '../api/client';
 import { acceptInvite } from '../api/invites';
 import type { InviteInfo } from '../api/types';
@@ -30,19 +29,7 @@ function AcceptForm({ token, info }: { token: string; info: InviteInfo }) {
       });
       loginWithToken(result);
       void message.success(`Welcome to TeamBoard, ${result.user.name}!`);
-      // InviteInfo has board_title but no board_id: the new user is a member of only the invited
-      // board, so look it up by title (falls back to the board list).
-      let target = '/';
-      if (info.board_title) {
-        try {
-          const boards = await listBoards();
-          const match = boards.find((b) => b.title === info.board_title) ?? (boards.length === 1 ? boards[0] : undefined);
-          if (match) target = `/boards/${match.id}`;
-        } catch {
-          // the board list will show it anyway
-        }
-      }
-      navigate(target, { replace: true });
+      navigate(info.board_id !== null ? `/boards/${info.board_id}` : '/', { replace: true });
     } catch (err) {
       // 410: invalid/expired/used up, 409: email already registered, 422: validation
       setError(getErrorMessage(err, 'Could not accept the invite'));

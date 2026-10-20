@@ -254,6 +254,7 @@ export type InviteInfo = {
   reason: string | null;
   email: string | null;
   name: string | null;
+  board_id: number | null;
   board_title: string | null;
   invited_by: string;
 };

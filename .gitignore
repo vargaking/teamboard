@@ -11,3 +11,12 @@ dist/
 .env
 *.log
 .DS_Store
+
+# promo video project (Remotion): heavy artefacts never go in git
+promo/node_modules/
+promo/out/
+promo/captures/
+promo/public/captures/
+promo/**/*.webm
+promo/**/*.mp4
+promo/**/*.db

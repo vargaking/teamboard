@@ -488,7 +488,12 @@ export function TeamPage() {
       render: (_v: unknown, u) => {
         const self = u.id === me.id;
         const adminButton = (
-          <Button size="small" disabled={self} aria-label={`${u.is_admin ? 'Remove admin' : 'Make admin'} ${u.name}`}>
+          <Button
+            size="small"
+            disabled={self}
+            style={{ minWidth: 112 }}
+            aria-label={`${u.is_admin ? 'Remove admin' : 'Make admin'} ${u.name}`}
+          >
             {u.is_admin ? 'Remove admin' : 'Make admin'}
           </Button>
         );
