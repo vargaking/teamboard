@@ -142,6 +142,7 @@ class InviteInfo(BaseModel):
     reason: str | None
     email: str | None
     name: str | None
+    board_id: int | None
     board_title: str | None
     invited_by: str
 
@@ -228,12 +229,13 @@ async def invite_info(token: str) -> InviteInfo:
     invite = await Invite.get_or_none(token_hash=_hash(token)).prefetch_related("board", "created_by")
     reason = _invalid_reason(invite)
     if invite is None:
-        return InviteInfo(valid=False, reason=reason, email=None, name=None, board_title=None, invited_by="")
+        return InviteInfo(valid=False, reason=reason, email=None, name=None, board_id=None, board_title=None, invited_by="")
     return InviteInfo(
         valid=reason is None,
         reason=reason,
         email=invite.email,
         name=invite.name,
+        board_id=invite.board.id if invite.board else None,
         board_title=invite.board.title if invite.board else None,
         invited_by=invite.created_by.name,
     )

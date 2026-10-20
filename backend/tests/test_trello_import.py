@@ -88,7 +88,7 @@ def test_preview_summary_and_member_suggestions(client: TestClient):
     assert p["title"] == "Lucrum sprint (Trello)"
     assert [lst["name"] for lst in p["lists"]] == ["Backlog", "Doing", "Old stuff"]  # Trello pos order
     assert p["lists"][2]["archived"] is True and p["lists"][0]["card_count"] == 3
-    assert p["card_count"] == 4 and p["archived_card_count"] == 1  # orphan card (unknown list) dropped
+    assert p["card_count"] == 3 and p["archived_card_count"] == 2  # archived card + card in archived list; orphan dropped
     assert p["label_count"] == 3 and p["comment_count"] == 2 and p["checklist_count"] == 1
     members = {m["trello_id"]: m for m in p["members"]}
     assert members["M1"]["suggested_user_id"] == users["miki@teamboard.local"]  # full-name match

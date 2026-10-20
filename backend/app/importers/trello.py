@@ -281,12 +281,15 @@ async def preview(export: TrelloExport) -> dict[str, Any]:
     cards_per_list: dict[str, int] = {}
     for card in export.cards:
         cards_per_list[card.list_id] = cards_per_list.get(card.list_id, 0) + 1
+    archived_lists = {lst.id for lst in export.lists if lst.archived}
+    # "archived" from the importer's point of view: the card itself or its list is archived (skipped by default)
+    archived_cards = sum(1 for c in export.cards if c.archived or c.list_id in archived_lists)
     return {
         "title": export.title,
         "description": export.description,
         "lists": [{"name": lst.name, "archived": lst.archived, "card_count": cards_per_list.get(lst.id, 0)} for lst in export.lists],
-        "card_count": sum(1 for c in export.cards if not c.archived),
-        "archived_card_count": sum(1 for c in export.cards if c.archived),
+        "card_count": len(export.cards) - archived_cards,
+        "archived_card_count": archived_cards,
         "label_count": len(export.labels),
         "comment_count": sum(len(c.comments) for c in export.cards),
         "checklist_count": export.checklist_count,

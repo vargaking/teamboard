@@ -97,7 +97,9 @@ type TrelloMemberMatch = { trello_id: string; trello_name: string; trello_userna
 type TrelloPreview = {
   title: string; description: string;
   lists: { name: string; archived: boolean; card_count: number }[];
-  card_count: number; archived_card_count: number; label_count: number; comment_count: number; checklist_count: number;
+  card_count: number;            // cards a default import creates (not archived, not in an archived list)
+  archived_card_count: number;   // archived cards + cards in archived lists
+  label_count: number; comment_count: number; checklist_count: number;
   members: TrelloMemberMatch[];
 };
 type TrelloImportOptions = {
@@ -122,7 +124,7 @@ Admins only, except where noted. New users get initials and a colour generated f
 type Invite = { id: number; email: string | null; name: string | null; board_id: number | null; board_title: string | null;
                 created_by: User; created_at: string; expires_at: string; max_uses: number; uses: number; revoked: boolean; url: string | null };
                 // url is returned ONLY by POST (token shown once)
-type InviteInfo = { valid: boolean; reason: string | null; email: string | null; name: string | null; board_title: string | null; invited_by: string };
+type InviteInfo = { valid: boolean; reason: string | null; email: string | null; name: string | null; board_id: number | null; board_title: string | null; invited_by: string };
 ```
 
 - `GET    /api/users` → `User[]` (any user; unchanged)

@@ -63,6 +63,7 @@ def test_invite_flow(client: TestClient):
         "reason": None,
         "email": "anna@example.com",
         "name": "Anna",
+        "board_id": board["id"],
         "board_title": board["title"],
         "invited_by": "Dániel Gergely",
     }
