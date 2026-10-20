@@ -142,6 +142,34 @@ def test_removed_member_is_unassigned(client: TestClient):
     assert board["columns"][0]["cards"][0]["assignees"] == []
 
 
+def test_reviewers(client: TestClient):
+    h = login(client, "ramtin")
+    rev_h = login(client, "andrada")
+    reviewer = client.get("/api/auth/me", headers=rev_h).json()["id"]
+    me = client.get("/api/auth/me", headers=h).json()["id"]
+    b = client.post("/api/boards", json={"title": "R"}, headers=h).json()
+    col = b["columns"][0]["id"]
+    # reviewer must be a member
+    assert client.post(f"/api/columns/{col}/cards", json={"title": "x", "reviewer_ids": [reviewer]}, headers=h).status_code == 400
+    client.put(f"/api/boards/{b['id']}/members", json={"user_ids": [reviewer]}, headers=h)
+    card = client.post(f"/api/columns/{col}/cards", json={"title": "x", "assignee_ids": [me], "reviewer_ids": [reviewer]}, headers=h).json()
+    assert [u["id"] for u in card["reviewers"]] == [reviewer] and [u["id"] for u in card["assignees"]] == [me]
+    # patch without reviewer_ids keeps them; explicit [] clears them
+    card = client.patch(f"/api/cards/{card['id']}", json={"title": "y"}, headers=h).json()
+    assert [u["id"] for u in card["reviewers"]] == [reviewer]
+    card = client.patch(f"/api/cards/{card['id']}", json={"reviewer_ids": [reviewer, me]}, headers=h).json()
+    assert sorted(u["id"] for u in card["reviewers"]) == sorted([reviewer, me])
+    # removing a member drops them as reviewer too
+    board = client.put(f"/api/boards/{b['id']}/members", json={"user_ids": []}, headers=h).json()
+    assert [u["id"] for u in board["columns"][0]["cards"][0]["reviewers"]] == [me]
+    card = client.patch(f"/api/cards/{card['id']}", json={"reviewer_ids": []}, headers=h).json()
+    assert card["reviewers"] == []
+    # seeded demo: the Review column card has a reviewer
+    demo = client.get("/api/boards", headers=login(client, "daniel")).json()
+    demo_board = client.get(f"/api/boards/{min(x['id'] for x in demo)}", headers=login(client, "daniel")).json()
+    assert len(demo_board["columns"][2]["cards"][0]["reviewers"]) == 1
+
+
 def test_change_password(client: TestClient):
     h = login(client, "vladimir")
     assert (

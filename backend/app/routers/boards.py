@@ -96,11 +96,14 @@ async def set_members(board_id: int, payload: BoardMembersIn, user: CurrentUser)
         await board.members.clear()
         await board.members.add(*users)
         # Users removed from the board must not stay assigned to its cards.
-        for column in await Column.filter(board_id=board_id).prefetch_related("cards__assignees"):
+        for column in await Column.filter(board_id=board_id).prefetch_related("cards__assignees", "cards__reviewers"):
             for card in column.cards:
                 stale = [u for u in card.assignees if u.id not in wanted]
                 if stale:
                     await card.assignees.remove(*stale)
+                stale = [u for u in card.reviewers if u.id not in wanted]
+                if stale:
+                    await card.reviewers.remove(*stale)
     await hub.board_updated(board_id, "members.updated", user.id, board_id)
     await hub.boards_changed(board_id, "members.updated", user.id)
     return await board_detail_or_404(board_id)

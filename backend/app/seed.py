@@ -80,6 +80,8 @@ async def seed() -> None:
         )
         await card.labels.add(*(labels[n] for n in label_names))
         await card.assignees.add(*(users[a] for a in assignees))
+        if col_index == 2:  # cards in Review get a reviewer
+            await card.reviewers.add(users["daniel"])
     log.info("created demo board %s", board.id)
 
 

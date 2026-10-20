@@ -80,6 +80,7 @@ class CardOut(ORMModel):
     position: int
     due_date: date | None
     assignees: list[UserOut]
+    reviewers: list[UserOut]
     labels: list[LabelOut]
     comment_count: int
     created_by: int
@@ -92,6 +93,7 @@ class CardCreate(BaseModel):
     description: str = ""
     due_date: date | None = None
     assignee_ids: list[int] = Field(default_factory=list)
+    reviewer_ids: list[int] = Field(default_factory=list)
     label_ids: list[int] = Field(default_factory=list)
 
 
@@ -102,6 +104,7 @@ class CardUpdate(BaseModel):
     description: str | None = None
     due_date: date | None = None
     assignee_ids: list[int] | None = None
+    reviewer_ids: list[int] | None = None
     label_ids: list[int] | None = None
 
 

@@ -30,6 +30,7 @@ async def create_card(column_id: int, payload: CardCreate, user: CurrentUser) ->
     column = await get_column_checked(user, column_id)
     board_id: int = column.board_id  # type: ignore[attr-defined]
     assignees = await validate_assignees(board_id, payload.assignee_ids)
+    reviewers = await validate_assignees(board_id, payload.reviewer_ids)
     labels = await validate_labels(board_id, payload.label_ids)
     async with in_transaction():
         position = await Card.filter(column_id=column_id).count()
@@ -43,6 +44,8 @@ async def create_card(column_id: int, payload: CardCreate, user: CurrentUser) ->
         )
         if assignees:
             await card.assignees.add(*assignees)
+        if reviewers:
+            await card.reviewers.add(*reviewers)
         if labels:
             await card.labels.add(*labels)
     await hub.board_updated(board_id, "card.created", user.id, card.id)
@@ -64,6 +67,7 @@ async def update_card(card_id: int, payload: CardUpdate, user: CurrentUser) -> C
         card.due_date = payload.due_date
         changed.append("due_date")
     assignees = await validate_assignees(board_id, payload.assignee_ids) if payload.assignee_ids is not None else None
+    reviewers = await validate_assignees(board_id, payload.reviewer_ids) if payload.reviewer_ids is not None else None
     labels = await validate_labels(board_id, payload.label_ids) if payload.label_ids is not None else None
     async with in_transaction():
         if changed:
@@ -72,6 +76,10 @@ async def update_card(card_id: int, payload: CardUpdate, user: CurrentUser) -> C
             await card.assignees.clear()
             if assignees:
                 await card.assignees.add(*assignees)
+        if reviewers is not None:
+            await card.reviewers.clear()
+            if reviewers:
+                await card.reviewers.add(*reviewers)
         if labels is not None:
             await card.labels.clear()
             if labels:

@@ -9,7 +9,9 @@ from app.schemas import BoardDetail, BoardSummary, CardOut, ColumnOut, LabelOut,
 
 
 def _card_queryset():
-    return Card.all().annotate(comment_count=Count("comments")).prefetch_related("assignees", "labels").order_by("position", "id")
+    return (
+        Card.all().annotate(comment_count=Count("comments")).prefetch_related("assignees", "reviewers", "labels").order_by("position", "id")
+    )
 
 
 def serialize_card(card: Card) -> CardOut:
@@ -21,6 +23,7 @@ def serialize_card(card: Card) -> CardOut:
         position=card.position,
         due_date=card.due_date,
         assignees=[UserOut.model_validate(u) for u in card.assignees],
+        reviewers=[UserOut.model_validate(u) for u in card.reviewers],
         labels=[LabelOut.model_validate(label) for label in card.labels],
         comment_count=int(getattr(card, "comment_count", 0) or 0),
         created_by=card.created_by_id,  # type: ignore[attr-defined]
@@ -126,13 +129,13 @@ async def get_label_checked(user: User, label_id: int) -> Label:
 
 
 async def validate_assignees(board_id: int, user_ids: list[int]) -> list[User]:
-    """Assignees must be members of the board."""
+    """Assignees and reviewers must be members of the board."""
     unique = list(dict.fromkeys(user_ids))
     if not unique:
         return []
     users = await User.filter(id__in=unique, boards__id=board_id)
     if len(users) != len(unique):
-        raise HTTPException(status.HTTP_400_BAD_REQUEST, "All assignees must be members of this board")
+        raise HTTPException(status.HTTP_400_BAD_REQUEST, "All assignees and reviewers must be members of this board")
     return users
 
 

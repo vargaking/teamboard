@@ -16,6 +16,7 @@ class User(Model):
 
     boards: fields.ManyToManyRelation["Board"]
     assigned_cards: fields.ManyToManyRelation["Card"]
+    reviewing_cards: fields.ManyToManyRelation["Card"]
 
     class Meta:
         table = "users"
@@ -78,6 +79,9 @@ class Card(Model):
     )
     assignees: fields.ManyToManyRelation[User] = fields.ManyToManyField(
         "models.User", related_name="assigned_cards", through="card_assignees", forward_key="user_id", backward_key="card_id"
+    )
+    reviewers: fields.ManyToManyRelation[User] = fields.ManyToManyField(
+        "models.User", related_name="reviewing_cards", through="card_reviewers", forward_key="user_id", backward_key="card_id"
     )
     labels: fields.ManyToManyRelation[Label] = fields.ManyToManyField(
         "models.Label", related_name="cards", through="card_labels", forward_key="label_id", backward_key="card_id"

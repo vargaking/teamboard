@@ -11,7 +11,7 @@ type User = { id: number; email: string; name: string; initials: string; color: 
 type Label = { id: number; board_id: number; name: string; color: string };
 type Card = {
   id: number; column_id: number; title: string; description: string; position: number;
-  due_date: string | null; assignees: User[]; labels: Label[]; comment_count: number;
+  due_date: string | null; assignees: User[]; reviewers: User[]; labels: Label[]; comment_count: number;
   created_by: number; created_at: string; updated_at: string;
 };
 type Column = { id: number; board_id: number; title: string; position: number; cards: Card[] }; // cards sorted by position
@@ -45,8 +45,8 @@ type Token = { access_token: string; token_type: "bearer"; user: User };
 - `DELETE /api/columns/{id}` → 204 (deletes its cards too)
 
 ## Cards
-- `POST   /api/columns/{id}/cards` body `{title, description?, due_date?, assignee_ids?, label_ids?}` → `Card` (appended at the end of the column)
-- `PATCH  /api/cards/{id}` body `{title?, description?, due_date?, assignee_ids?, label_ids?}` → `Card` (send `due_date: null` to clear; `assignee_ids`/`label_ids` replace the full set)
+- `POST   /api/columns/{id}/cards` body `{title, description?, due_date?, assignee_ids?, reviewer_ids?, label_ids?}` → `Card` (appended at the end of the column; assignees and reviewers must be board members)
+- `PATCH  /api/cards/{id}` body `{title?, description?, due_date?, assignee_ids?, reviewer_ids?, label_ids?}` → `Card` (send `due_date: null` to clear; `assignee_ids`/`reviewer_ids`/`label_ids` replace the full set)
 - `POST   /api/cards/{id}/move` body `{column_id, position}` → `BoardDetail` (`position` = target index within the destination column, 0-based; positions of all affected cards are renumbered)
 - `DELETE /api/cards/{id}` → 204
 - `GET    /api/cards/{id}/comments` → `Comment[]` (oldest first)
