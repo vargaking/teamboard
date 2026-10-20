@@ -1,15 +1,27 @@
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 
+/** VITE_BASE (e.g. "/board/") -> always leading + trailing slash; default "/". */
+function normaliseBase(raw: string | undefined): string {
+  const trimmed = (raw ?? '').trim().replace(/^\/+|\/+$/g, '');
+  return trimmed ? `/${trimmed}/` : '/';
+}
+
+const base = normaliseBase(process.env.VITE_BASE);
+
 export default defineConfig({
+  base,
   plugins: [react()],
   server: {
     port: 5173,
     proxy: {
-      '/api': {
+      // Dev proxy follows the base, e.g. /board/api -> backend /api (the prefix is stripped,
+      // like the host nginx does in production).
+      [`${base}api`]: {
         target: 'http://localhost:8000',
         changeOrigin: true,
         ws: true,
+        ...(base === '/' ? {} : { rewrite: (path: string) => path.slice(base.length - 1) }),
       },
     },
   },

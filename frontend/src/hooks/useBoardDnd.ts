@@ -1,13 +1,10 @@
 import { useCallback } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
-import { App } from 'antd';
 import type { DropResult } from '@hello-pangea/dnd';
-import { moveCard } from '../api/cards';
-import { reorderColumns } from '../api/boards';
-import { getErrorMessage } from '../api/client';
 import type { BoardDetail } from '../api/types';
-import { moveCardInBoard, reorderColumnsInBoard, visibleIndexToRealIndex } from '../utils/board';
+import { visibleIndexToRealIndex } from '../utils/board';
 import { queryKeys } from './queryKeys';
+import { useBoardMoves } from './useBoardMoves';
 
 export const COLUMN_DROPPABLE_ID = 'board-columns';
 export const DND_TYPE_COLUMN = 'COLUMN';
@@ -23,8 +20,7 @@ export function useBoardDnd(
   visibleCardIds: ((columnId: number) => number[]) | null,
 ) {
   const queryClient = useQueryClient();
-  const { message } = App.useApp();
-  const key = queryKeys.board(boardId);
+  const { moveCardTo, moveColumn } = useBoardMoves(boardId);
 
   return useCallback(
     (result: DropResult) => {
@@ -32,21 +28,11 @@ export function useBoardDnd(
       if (!destination) return;
       if (source.droppableId === destination.droppableId && source.index === destination.index) return;
 
-      const board = queryClient.getQueryData<BoardDetail>(key);
+      const board = queryClient.getQueryData<BoardDetail>(queryKeys.board(boardId));
       if (!board) return;
 
-      // Don't let an in-flight refetch overwrite the optimistic state.
-      void queryClient.cancelQueries({ queryKey: key });
-
       if (type === DND_TYPE_COLUMN) {
-        const next = reorderColumnsInBoard(board, source.index, destination.index);
-        queryClient.setQueryData(key, next);
-        reorderColumns(boardId, { column_ids: next.columns.map((c) => c.id) })
-          .then((updated) => queryClient.setQueryData(key, updated))
-          .catch((err: unknown) => {
-            void queryClient.invalidateQueries({ queryKey: key });
-            void message.error(getErrorMessage(err, 'Could not reorder columns'));
-          });
+        void moveColumn(source.index, destination.index);
         return;
       }
 
@@ -65,14 +51,8 @@ export function useBoardDnd(
           );
         }
       }
-      queryClient.setQueryData(key, moveCardInBoard(board, cardId, columnId, position));
-      moveCard(cardId, { column_id: columnId, position })
-        .then((updated) => queryClient.setQueryData(key, updated))
-        .catch((err: unknown) => {
-          void queryClient.invalidateQueries({ queryKey: key });
-          void message.error(getErrorMessage(err, 'Could not move card'));
-        });
+      void moveCardTo(cardId, columnId, position);
     },
-    [boardId, key, message, queryClient, visibleCardIds],
+    [boardId, moveCardTo, moveColumn, queryClient, visibleCardIds],
   );
 }

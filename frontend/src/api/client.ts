@@ -1,4 +1,5 @@
 import axios, { AxiosError } from 'axios';
+import { appPath, redirectToLogin } from '../utils/basePath';
 
 export const TOKEN_KEY = 'teamboard_token';
 
@@ -23,7 +24,8 @@ export function clearToken(): void {
 }
 
 export const api = axios.create({
-  baseURL: '/api',
+  // "/api" at the root, "/board/api" when deployed under a path prefix.
+  baseURL: appPath('api'),
   headers: { 'Content-Type': 'application/json' },
 });
 
@@ -43,9 +45,7 @@ api.interceptors.response.use(
       const isLoginRequest = error.config?.url?.endsWith('/auth/login') ?? false;
       if (!isLoginRequest) {
         clearToken();
-        if (window.location.pathname !== '/login') {
-          window.location.assign('/login');
-        }
+        redirectToLogin();
       }
     }
     return Promise.reject(error);

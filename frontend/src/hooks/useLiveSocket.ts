@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { clearToken, getToken } from '../api/client';
+import { redirectToLogin } from '../utils/basePath';
 import { NON_RETRYABLE_CLOSE_CODES, WS_CLOSE_BAD_TOKEN, WS_CLOSE_NORMAL, parseLiveMessage } from '../api/live';
 import type { LiveMessage } from '../api/types';
 
@@ -106,7 +107,7 @@ export function useLiveSocket({ buildUrl, onMessage, onFatalClose, onReconnect, 
           if (event.code === WS_CLOSE_BAD_TOKEN) {
             // Same treatment as an HTTP 401.
             clearToken();
-            if (window.location.pathname !== '/login') window.location.assign('/login');
+            redirectToLogin();
           }
           if (event.code !== WS_CLOSE_NORMAL) onFatalCloseRef.current?.(event.code);
           return;

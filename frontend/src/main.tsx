@@ -9,6 +9,7 @@ import 'dayjs/locale/en-gb';
 import { AuthProvider } from './auth/AuthContext';
 import { App } from './App';
 import { theme } from './theme';
+import { ROUTER_BASENAME } from './utils/basePath';
 import './index.css';
 
 const queryClient = new QueryClient({
@@ -33,7 +34,7 @@ createRoot(rootElement).render(
     <ConfigProvider theme={theme} locale={enGB}>
       <AntApp>
         <QueryClientProvider client={queryClient}>
-          <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
+          <BrowserRouter basename={ROUTER_BASENAME} future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
             <AuthProvider>
               <App />
             </AuthProvider>

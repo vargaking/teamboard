@@ -1,4 +1,5 @@
 import type { LiveMessage } from './types';
+import { appPath } from '../utils/basePath';
 
 /** Close codes the server uses for non-retryable failures. */
 export const WS_CLOSE_BAD_TOKEN = 4401;
@@ -15,7 +16,7 @@ export const NON_RETRYABLE_CLOSE_CODES: ReadonlySet<number> = new Set([
 
 function wsBase(): string {
   const protocol = window.location.protocol === 'https:' ? 'wss' : 'ws';
-  return `${protocol}://${window.location.host}/api`;
+  return `${protocol}://${window.location.host}${appPath('api')}`;
 }
 
 export function boardChannelUrl(boardId: number, token: string): string {

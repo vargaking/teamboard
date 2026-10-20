@@ -157,3 +157,58 @@ export type BoardsChangedMessage = {
 export type BoardChannelMessage = BoardUpdatedMessage | BoardDeletedMessage;
 export type BoardsChannelMessage = BoardsChangedMessage | BoardDeletedMessage;
 export type LiveMessage = BoardUpdatedMessage | BoardDeletedMessage | BoardsChangedMessage;
+
+// ---- AI (bring-your-own key) ----
+
+export type AIProvider = 'anthropic' | 'openai';
+
+/** key_hint = "…" + last 4 chars */
+export type AISettings = {
+  provider: AIProvider | null;
+  model: string | null;
+  has_key: boolean;
+  key_hint: string | null;
+};
+
+export type AISettingsUpdate = {
+  provider: AIProvider;
+  /** omit to keep the stored key */
+  api_key?: string;
+  model?: string;
+};
+
+export type AIModel = { id: string; label: string };
+
+export type AITestResult = { ok: true; model: string };
+
+export type ChatMessage = { role: 'user' | 'assistant'; content: string };
+
+export type CardAssistAction = 'describe' | 'acceptance_criteria' | 'subtasks' | 'labels';
+
+export type CardAssistRequest = { action: CardAssistAction; instructions?: string };
+
+export type CardAssistSubtask = { title: string; description: string };
+export type SuggestedLabel = { name: string; color: string };
+
+export type CardAssistResult =
+  | { action: 'describe'; description: string }
+  | { action: 'acceptance_criteria'; criteria: string[] }
+  | { action: 'subtasks'; subtasks: CardAssistSubtask[] }
+  | { action: 'labels'; label_ids: number[]; new_labels: SuggestedLabel[] };
+
+export type BoardSummaryResult = { summary: string };
+
+export type DraftCard = {
+  title: string;
+  description: string;
+  column_id: number;
+  label_ids: number[];
+  assignee_ids: number[];
+  due_date: string | null;
+};
+
+export type DraftCardsRequest = { text: string; column_id?: number };
+export type DraftCardsResult = { cards: DraftCard[] };
+
+export type BoardChatRequest = { messages: ChatMessage[] };
+export type BoardChatResult = { reply: string };

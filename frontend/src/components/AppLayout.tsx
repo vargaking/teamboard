@@ -2,13 +2,23 @@ import { useState } from 'react';
 import { Link, Outlet, useLocation, useNavigate } from 'react-router-dom';
 import { Button, Dropdown, Layout, Space, Typography } from 'antd';
 import type { MenuProps } from 'antd';
-import { AppstoreOutlined, KeyOutlined, LogoutOutlined, ProjectOutlined } from '@ant-design/icons';
+import { AppstoreOutlined, KeyOutlined, LogoutOutlined, ProjectOutlined, ThunderboltOutlined } from '@ant-design/icons';
 import { useCurrentUser, useAuth } from '../auth/AuthContext';
 import { UserAvatar } from './UserAvatar';
 import { ChangePasswordModal } from './ChangePasswordModal';
+import { AIContextProvider, useAI } from './ai/AIContext';
 
 export function AppLayout() {
+  return (
+    <AIContextProvider>
+      <AppLayoutInner />
+    </AIContextProvider>
+  );
+}
+
+function AppLayoutInner() {
   const user = useCurrentUser();
+  const { openSettings } = useAI();
   const { logout } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
@@ -26,11 +36,13 @@ export function AppLayout() {
       ),
     },
     { type: 'divider' },
+    { key: 'ai', icon: <ThunderboltOutlined />, label: 'AI settings' },
     { key: 'password', icon: <KeyOutlined />, label: 'Change password' },
     { key: 'logout', icon: <LogoutOutlined />, label: 'Log out', danger: true },
   ];
 
   const onMenuClick: MenuProps['onClick'] = ({ key }) => {
+    if (key === 'ai') openSettings();
     if (key === 'password') setPasswordOpen(true);
     if (key === 'logout') {
       logout();
