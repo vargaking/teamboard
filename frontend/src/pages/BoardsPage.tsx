@@ -1,7 +1,7 @@
-import { useMemo, useState } from 'react';
+import { lazy, Suspense, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { App, Button, Card, Col, Empty, Form, Input, Modal, Result, Row, Space, Spin, Typography } from 'antd';
-import { CrownOutlined, PlusOutlined } from '@ant-design/icons';
+import { CrownOutlined, ImportOutlined, PlusOutlined } from '@ant-design/icons';
 import { getErrorMessage } from '../api/client';
 import type { BoardCreate, User } from '../api/types';
 import { useCurrentUser } from '../auth/AuthContext';
@@ -10,6 +10,11 @@ import { LiveIndicator } from '../components/LiveIndicator';
 import { useBoardList, useCreateBoard } from '../hooks/useBoards';
 import { useBoardsSocket } from '../hooks/useBoardsSocket';
 import { useUsers } from '../hooks/useUsers';
+
+// Code-split: Upload/Steps/Table and the import logic are only needed when importing.
+const TrelloImportModal = lazy(() =>
+  import('../components/TrelloImportModal').then((m) => ({ default: m.TrelloImportModal })),
+);
 
 type NewBoardValues = { title: string; description?: string };
 
@@ -22,6 +27,7 @@ export function BoardsPage() {
   const createBoard = useCreateBoard();
   const liveStatus = useBoardsSocket();
   const [modalOpen, setModalOpen] = useState(false);
+  const [importOpen, setImportOpen] = useState(false);
   const [form] = Form.useForm<NewBoardValues>();
 
   const usersById = useMemo(() => {
@@ -118,11 +124,21 @@ export function BoardsPage() {
           </Typography.Title>
           <LiveIndicator status={liveStatus} />
         </Space>
-        <Button type="primary" icon={<PlusOutlined />} onClick={() => setModalOpen(true)}>
-          New board
-        </Button>
+        <Space>
+          <Button icon={<ImportOutlined />} onClick={() => setImportOpen(true)}>
+            Import from Trello
+          </Button>
+          <Button type="primary" icon={<PlusOutlined />} onClick={() => setModalOpen(true)}>
+            New board
+          </Button>
+        </Space>
       </div>
       {content}
+      {importOpen && (
+        <Suspense fallback={null}>
+          <TrelloImportModal open={importOpen} onClose={() => setImportOpen(false)} />
+        </Suspense>
+      )}
       <Modal
         title="New board"
         open={modalOpen}

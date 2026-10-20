@@ -720,3 +720,17 @@ body {
   width: 100%;
 }
 
+/* ---------- Trello import ---------- */
+
+.trello-member {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.35;
+}
+
+.trello-summary.ant-typography {
+  margin-bottom: 8px;
+  padding: 8px 12px;
+  background: var(--chip-bg);
+  border-radius: 6px;
+}

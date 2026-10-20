@@ -180,3 +180,40 @@ export type PersonalTokenCreate = { name: string };
 export type OAuthConsentInfo = { client_name: string; scopes: string[]; redirect_host: string };
 export type OAuthConsentDecision = { req: string; approve: boolean };
 export type OAuthConsentResult = { redirect_to: string };
+
+// ---- Import a Trello board ----
+
+/** The raw Trello board export (Board menu → Print and export → Export as JSON). Opaque to the client. */
+export type TrelloExport = Record<string, unknown>;
+
+export type TrelloMemberMatch = {
+  trello_id: string;
+  trello_name: string;
+  trello_username: string | null;
+  card_count: number;
+  suggested_user_id: number | null;
+};
+
+export type TrelloPreview = {
+  title: string;
+  description: string;
+  lists: { name: string; archived: boolean; card_count: number }[];
+  card_count: number;
+  archived_card_count: number;
+  label_count: number;
+  comment_count: number;
+  checklist_count: number;
+  members: TrelloMemberMatch[];
+};
+
+export type TrelloImportOptions = {
+  /** defaults to the Trello board name */
+  title?: string;
+  /** default false: archived lists and cards are skipped */
+  include_archived?: boolean;
+  /** trello member id -> user id (mapped users become board members + assignees) */
+  member_map?: Record<string, number>;
+};
+
+export type TrelloPreviewRequest = { export: TrelloExport };
+export type TrelloImportRequest = { export: TrelloExport; options?: TrelloImportOptions };
