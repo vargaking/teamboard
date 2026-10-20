@@ -16,5 +16,5 @@ RUN useradd -m appuser && chown -R appuser /app
 USER appuser
 
 EXPOSE 8000
-HEALTHCHECK --interval=15s --timeout=5s --start-period=30s --retries=5 CMD curl -fsS http://localhost:8000/api/health || exit 1
+HEALTHCHECK --interval=15s --timeout=5s --start-period=30s --retries=5 CMD curl -fsS "http://localhost:${PORT:-8000}/api/health" || exit 1
 ENTRYPOINT ["./entrypoint.sh"]

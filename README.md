@@ -74,6 +74,23 @@ ruff check app tests && ruff format --check app tests
 - **Live updates:** every mutation is broadcast over a per-board WebSocket (`/api/ws/boards/{id}`) and a global
   board-list channel (`/api/ws/boards`); clients refetch on receipt. Protocol in [`API.md`](API.md).
 
+## Deploying on Render (+ Supabase Postgres)
+
+The root `Dockerfile` builds a single image: the API serves the built frontend from `/` and the API from `/api`, so
+one Render web service is enough (no CORS, OAuth discovery at the origin root, WebSockets work).
+
+1. **Database**: create a Supabase project, copy *Connect → Session pooler* URI (IPv4, port 5432) and append
+   `?sslmode=require`. Don't use the transaction pooler (port 6543): asyncpg's prepared statements break on it.
+   A Render Postgres works the same way (its internal URL, no `sslmode` needed).
+2. **Service**: Render → New → Blueprint → this repo (`render.yaml`). Set `DATABASE_URL`; `SECRET_KEY` is generated,
+   `PUBLIC_URL` defaults to the service's `onrender.com` URL. First deploy runs migrations and the seed.
+3. Open the URL, log in, change passwords. Add the Claude connector with `https://<service>.onrender.com/api/mcp`.
+
+Plan note: Render's **free** instance sleeps after 15 min idle and takes 30-60 s to wake. That breaks the claude.ai
+OAuth handshake (10 s limit on discovery/token calls) and makes live updates lag after idle; the **starter** plan
+(always-on) avoids both. Supabase free projects pause after a week without API/DB activity — the board's own traffic
+keeps it alive as long as the team uses it.
+
 ## Deploying on a shared VM (one public port, next to another project)
 
 Run TeamBoard's compose bound to localhost and put one **host nginx** in front as the only public listener; it routes

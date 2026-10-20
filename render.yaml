@@ -1,0 +1,21 @@
+# Render Blueprint: one web service running the single-service image (API + frontend), Postgres on Supabase.
+# Dashboard -> New -> Blueprint -> pick this repo. Then set DATABASE_URL (and nothing else is required).
+services:
+  - type: web
+    name: teamboard
+    runtime: docker
+    dockerfilePath: ./Dockerfile
+    plan: starter            # "free" works but sleeps after 15 min idle; see README (OAuth has a 10 s limit)
+    region: frankfurt
+    healthCheckPath: /api/health
+    autoDeploy: true
+    envVars:
+      - key: DATABASE_URL
+        sync: false          # Supabase "Session pooler" URI (IPv4, port 5432) with ?sslmode=require
+      - key: SECRET_KEY
+        generateValue: true
+      - key: SEED_ON_STARTUP
+        value: "true"
+      - key: SEED_PASSWORD
+        value: changeme
+      # PUBLIC_URL defaults to RENDER_EXTERNAL_URL (https://<service>.onrender.com). Set it only for a custom domain.

@@ -11,15 +11,17 @@ Public paths (relative to PUBLIC_URL):
 import logging
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
+from pathlib import Path
 from urllib.parse import urlparse
 
 from fastapi import FastAPI
-from fastapi.responses import JSONResponse
+from fastapi.responses import FileResponse, JSONResponse
 from mcp.server.auth.routes import build_metadata, create_auth_routes
 from mcp.server.auth.settings import ClientRegistrationOptions, RevocationOptions
 from pydantic import AnyHttpUrl
 from starlette.applications import Starlette
 
+from app.core.config import get_settings
 from app.mcp.oauth import SCOPE, TeamBoardOAuthProvider, issuer_url, mcp_url, oauth_enabled
 from app.mcp.server import mcp_server
 
@@ -52,20 +54,63 @@ def mount_mcp(app: FastAPI) -> None:
     # Transport app: /api/mcp (Bearer-protected) + /.well-known/oauth-protected-resource<prefix>/api/mcp.
     # Mounted at the root so the .well-known route sits at the origin root as RFC 9728 requires. The real app is
     # (re)built on every startup because the SDK's session manager can only be run once per instance.
+    static_dir = get_settings().static_dir
+    if static_dir:
+        if not (Path(static_dir) / "index.html").is_file():
+            raise RuntimeError(f"STATIC_DIR={static_dir} does not contain a built frontend (index.html)")
+        _Delegate.spa = _Spa(static_dir)
+        log.info("serving the frontend from %s", static_dir)
     app.mount("/", _Delegate())
 
 
 class _Delegate:
-    """ASGI app that forwards to the transport app built by `run_transport()` for the current lifespan."""
+    """Catch-all mounted at "/": MCP paths go to the transport app built by `run_transport()` for the current
+    lifespan; everything else is the single-page frontend when STATIC_DIR is configured (single-service hosting),
+    otherwise 404."""
 
     current: Starlette | None = None
+    spa: "_Spa | None" = None
 
     async def __call__(self, scope, receive, send) -> None:  # type: ignore[no-untyped-def]
-        if _Delegate.current is None:
-            response = JSONResponse({"detail": "MCP transport not started"}, status_code=503)
-            await response(scope, receive, send)
+        path = scope.get("path", "") if scope["type"] == "http" else ""
+        if scope["type"] == "lifespan" or path == "/api/mcp" or path.startswith("/.well-known/oauth-protected-resource"):
+            if _Delegate.current is None:
+                response = JSONResponse({"detail": "MCP transport not started"}, status_code=503)
+                await response(scope, receive, send)
+                return
+            await _Delegate.current(scope, receive, send)
             return
-        await _Delegate.current(scope, receive, send)
+        if _Delegate.spa is not None and scope["type"] == "http":
+            await _Delegate.spa(scope, receive, send)
+            return
+        await JSONResponse({"detail": "Not Found"}, status_code=404)(scope, receive, send)
+
+
+class _Spa:
+    """Serve a Vite build: real files as-is (hashed assets cached for a year), everything else -> index.html."""
+
+    def __init__(self, directory: str) -> None:
+        self.root = Path(directory).resolve()
+        self.index = self.root / "index.html"
+
+    async def __call__(self, scope, receive, send) -> None:  # type: ignore[no-untyped-def]
+        if scope["method"] not in ("GET", "HEAD"):
+            await JSONResponse({"detail": "Method Not Allowed"}, status_code=405)(scope, receive, send)
+            return
+        relative = scope["path"].lstrip("/")
+        candidate = (self.root / relative).resolve() if relative else self.index
+        if candidate.is_relative_to(self.root) and candidate.is_file():
+            headers = (
+                {"Cache-Control": "public, max-age=31536000, immutable"}
+                if relative.startswith("assets/")
+                else {"Cache-Control": "no-cache"}
+            )
+            await FileResponse(candidate, headers=headers)(scope, receive, send)
+            return
+        if scope["path"].startswith("/api/"):
+            await JSONResponse({"detail": "Not Found"}, status_code=404)(scope, receive, send)
+            return
+        await FileResponse(self.index, headers={"Cache-Control": "no-cache"})(scope, receive, send)
 
 
 @asynccontextmanager

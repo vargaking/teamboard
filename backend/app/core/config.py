@@ -1,3 +1,4 @@
+import os
 from functools import lru_cache
 
 from pydantic import Field
@@ -21,7 +22,10 @@ class Settings(BaseSettings):
     seed_password: str = "changeme"
     # Public origin (plus path prefix, if any) users reach the app at, e.g. https://board.example.com or
     # https://vm.example/board. Used for OAuth issuer/resource URLs and the MCP URL shown in the UI.
-    public_url: str = "http://localhost:8080"
+    public_url: str = Field(default_factory=lambda: os.environ.get("RENDER_EXTERNAL_URL", "http://localhost:8080"))
+    # When set to a directory containing the built frontend (dist/), the API also serves the SPA from "/".
+    # Used by the single-service Docker image (root Dockerfile) for Render-style hosting.
+    static_dir: str | None = None
 
 
 @lru_cache
