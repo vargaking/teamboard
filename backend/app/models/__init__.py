@@ -17,6 +17,7 @@ class User(Model):
     boards: fields.ManyToManyRelation["Board"]
     assigned_cards: fields.ManyToManyRelation["Card"]
     reviewing_cards: fields.ManyToManyRelation["Card"]
+    ai_settings: fields.ReverseRelation["UserAISettings"]
 
     class Meta:
         table = "users"
@@ -106,3 +107,18 @@ class Comment(Model):
     class Meta:
         table = "comments"
         ordering = ["created_at", "id"]
+
+
+class UserAISettings(Model):
+    """Per-user bring-your-own-key AI configuration. `api_key_encrypted` is a Fernet token (see app/ai/crypto.py)."""
+
+    id = fields.IntField(primary_key=True)
+    user: fields.OneToOneRelation[User] = fields.OneToOneField("models.User", related_name="ai_settings", on_delete=fields.CASCADE)
+    provider = fields.CharField(max_length=20)  # "anthropic" | "openai"
+    model = fields.CharField(max_length=120, null=True)
+    api_key_encrypted = fields.TextField()
+    key_hint = fields.CharField(max_length=8)  # last 4 characters, for display only
+    updated_at = fields.DatetimeField(auto_now=True)
+
+    class Meta:
+        table = "user_ai_settings"

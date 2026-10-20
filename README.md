@@ -66,9 +66,36 @@ ruff check app tests && ruff format --check app tests
 - Boards with members (admins see every board; others only boards they belong to); owner/admin can delete.
 - Columns: create, rename, drag to reorder, delete (cascades cards). New boards start with *To do / In progress / Review / Done*.
 - Cards: drag between/within columns, title, description, due date (overdue/soon highlighting), multiple assignees and reviewers (board members only; reviewers shown with an eye icon), coloured labels, comments. The open card is in the URL (`?card=ID`) so it can be linked.
+- **AI (bring your own key)**: per-user Anthropic or OpenAI key stored encrypted; card assist (description, acceptance criteria, subtasks, labels), board summary, cards drafted from pasted notes, chat with the board. AI only proposes; the user confirms before anything is written. Right-click context menus on cards, columns and the canvas.
 - Filters: by assignee ("assigned to me"), by reviewer ("reviewed by me" / "no reviewer") and title search; drag-and-drop stays correct while filters hide cards.
 - **Live updates:** every mutation is broadcast over a per-board WebSocket (`/api/ws/boards/{id}`) and a global
   board-list channel (`/api/ws/boards`); clients refetch on receipt. Protocol in [`API.md`](API.md).
+
+## Deploying on a shared VM (one public port, next to another project)
+
+Run TeamBoard's compose bound to localhost and put one **host nginx** in front as the only public listener; it routes
+to TeamBoard and to the other project (e.g. Lucrum) either by hostname or by path. Memory footprint of TeamBoard is
+roughly 200 MB (Postgres + API + nginx).
+
+```bash
+git clone https://github.com/vargaking/teamboard && cd teamboard
+cp .env.example .env
+# in .env: SECRET_KEY=<openssl rand -hex 32>, POSTGRES_PASSWORD=<random>, WEB_BIND=127.0.0.1,
+#          CORS_ORIGINS=["https://board.example.com"]   (the public origin users will type)
+docker compose up -d --build
+curl -s localhost:8080/api/health          # {"status":"ok",...}
+```
+
+Then install one of the host nginx configs and reload nginx:
+
+- **By hostname** (`deploy/host-nginx-hostnames.conf`): `board.<domain>` → `127.0.0.1:8080`, `lucrum.<domain>` → the other
+  app's local port. Needs a DNS record (or wildcard) per hostname. Simplest and most robust.
+- **By path** (`deploy/host-nginx-paths.conf`): `/board/` → TeamBoard, `/` → the other app. Set `VITE_BASE=/board/` in `.env`
+  **before** `docker compose up --build` so the frontend is built for that prefix.
+
+Both configs forward WebSocket upgrades (required for live updates). For HTTPS, run `certbot --nginx` on the host; the
+containers stay plain HTTP on localhost. Updating: `git pull && docker compose up -d --build` (migrations run on start).
+Backups: `docker compose exec db pg_dump -U teamboard teamboard > backup.sql`.
 
 ## Architecture notes
 
@@ -78,6 +105,7 @@ ruff check app tests && ruff format --check app tests
 - The WebSocket hub (`backend/app/realtime.py`) is **in-process**. Run the API with a single uvicorn worker
   (the default). To scale to several workers/containers, replace `BoardHub` with a Redis pub/sub implementation
   with the same methods — nothing else needs to change.
+- AI provider keys are encrypted with a Fernet key derived from `SECRET_KEY`; rotating `SECRET_KEY` means everyone re-enters their key. Provider calls go through `backend/app/ai/providers.py` (structured output via a forced tool call on Anthropic, `json_schema` on OpenAI).
 - Auth is a stateless HS256 JWT (`SECRET_KEY`), one week lifetime; the WebSocket takes it as `?token=`.
 - Non-public e-mails (`@teamboard.local`) are allowed on purpose; swap `Email` in `schemas.py` for `EmailStr`
   if you ever open registration to real addresses.

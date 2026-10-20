@@ -9,7 +9,7 @@ from tortoise.contrib.fastapi import RegisterTortoise
 from app.core.config import get_settings
 from app.db import TORTOISE_ORM
 from app.realtime import hub
-from app.routers import auth, boards, cards, columns, users, ws
+from app.routers import ai, auth, boards, cards, columns, users, ws
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(name)s: %(message)s")
 settings = get_settings()
@@ -44,6 +44,7 @@ app.include_router(boards.router, prefix=API_PREFIX)
 app.include_router(columns.router, prefix=API_PREFIX)
 app.include_router(cards.router, prefix=API_PREFIX)
 app.include_router(ws.router, prefix=API_PREFIX)
+app.include_router(ai.router, prefix=API_PREFIX)
 
 
 @app.get(f"{API_PREFIX}/health", tags=["meta"])
