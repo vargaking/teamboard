@@ -1,5 +1,5 @@
 import axios, { AxiosError } from 'axios';
-import { appPath, redirectToLogin } from '../utils/basePath';
+import { API_BASE, redirectToLogin } from '../utils/basePath';
 
 export const TOKEN_KEY = 'teamboard_token';
 
@@ -24,8 +24,8 @@ export function clearToken(): void {
 }
 
 export const api = axios.create({
-  // "/api" at the root, "/board/api" when deployed under a path prefix.
-  baseURL: appPath('api'),
+  // "/api" at the root, "/board/api" under a path prefix, or "https://<api-host>/api" when the API is hosted separately.
+  baseURL: API_BASE,
   headers: { 'Content-Type': 'application/json' },
 });
 

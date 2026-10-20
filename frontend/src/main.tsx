@@ -7,6 +7,7 @@ import { App as AntApp, ConfigProvider } from 'antd';
 import enGB from 'antd/locale/en_GB';
 import 'dayjs/locale/en-gb';
 import { AuthProvider } from './auth/AuthContext';
+import { BackendStatusBanner } from './components/BackendStatusBanner';
 import { App } from './App';
 import { buildAntdTheme } from './theme/antdTheme';
 import { ThemeModeProvider, useThemeMode } from './theme/ThemeModeContext';
@@ -52,6 +53,7 @@ createRoot(rootElement).render(
               future={{ v7_startTransition: true, v7_relativeSplatPath: true }}
             >
               <AuthProvider>
+                <BackendStatusBanner />
                 <App />
               </AuthProvider>
             </BrowserRouter>

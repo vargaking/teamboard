@@ -26,6 +26,25 @@ class Settings(BaseSettings):
     # When set to a directory containing the built frontend (dist/), the API also serves the SPA from "/".
     # Used by the single-service Docker image (root Dockerfile) for Render-style hosting.
     static_dir: str | None = None
+    # Where the SPA lives when hosted separately (e.g. Vercel). Defaults to PUBLIC_URL (single origin).
+    # Used for the OAuth consent redirect and automatically allowed for CORS.
+    frontend_url: str | None = None
+
+    @property
+    def effective_frontend_url(self) -> str:
+        return (self.frontend_url or self.public_url).rstrip("/")
+
+    @property
+    def effective_cors_origins(self) -> list[str]:
+        origins = list(self.cors_origins)
+        for url in (self.public_url, self.effective_frontend_url):
+            origin = url.rstrip("/")
+            # origin only (scheme://host[:port]); a path prefix is not part of an origin
+            parts = origin.split("/", 3)
+            origin = "/".join(parts[:3])
+            if origin and origin not in origins:
+                origins.append(origin)
+        return origins
 
 
 @lru_cache

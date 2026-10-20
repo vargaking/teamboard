@@ -91,6 +91,17 @@ OAuth handshake (10 s limit on discovery/token calls) and makes live updates lag
 (always-on) avoids both. Supabase free projects pause after a week without API/DB activity — the board's own traffic
 keeps it alive as long as the team uses it.
 
+## Frontend on Vercel (optional, keeps the UI responsive while a free-tier API wakes up)
+
+The API can stay on Render while the SPA is served from Vercel. The page then loads instantly and shows a
+"server is waking up" banner until the API answers.
+
+- Vercel project: root directory `frontend`, framework Vite (`frontend/vercel.json` has the SPA rewrite and cache
+  headers). Environment variable `VITE_API_URL=https://<render-service>.onrender.com` (build-time).
+- Render service: add `FRONTEND_URL=https://<project>.vercel.app` (OAuth consent page lives there; CORS is derived).
+  `PUBLIC_URL` stays the API origin - it is the MCP server URL for Claude.
+- Without `VITE_API_URL` the build is the single-origin one used by the Docker image.
+
 ## Deploying on a shared VM (one public port, next to another project)
 
 Run TeamBoard's compose bound to localhost and put one **host nginx** in front as the only public listener; it routes

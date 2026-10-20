@@ -1,5 +1,5 @@
 import type { LiveMessage } from './types';
-import { appPath } from '../utils/basePath';
+import { API_BASE } from '../utils/basePath';
 
 /** Close codes the server uses for non-retryable failures. */
 export const WS_CLOSE_BAD_TOKEN = 4401;
@@ -15,8 +15,9 @@ export const NON_RETRYABLE_CLOSE_CODES: ReadonlySet<number> = new Set([
 ]);
 
 function wsBase(): string {
-  const protocol = window.location.protocol === 'https:' ? 'wss' : 'ws';
-  return `${protocol}://${window.location.host}${appPath('api')}`;
+  // API_BASE is absolute ("https://host/api") when the API is hosted separately, otherwise a path.
+  const absolute = API_BASE.startsWith('http') ? API_BASE : `${window.location.origin}${API_BASE}`;
+  return absolute.replace(/^http/, 'ws');
 }
 
 export function boardChannelUrl(boardId: number, token: string): string {

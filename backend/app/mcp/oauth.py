@@ -150,7 +150,7 @@ class TeamBoardOAuthProvider:
     async def authorize(self, client: OAuthClientInformationFull, params: AuthorizationParams) -> str:
         if params.scopes and any(s != SCOPE for s in params.scopes):
             raise AuthorizeError("invalid_scope", f"Only the '{SCOPE}' scope is available")
-        return f"{public_url()}/oauth/consent?req={_sign_consent(client, params)}"
+        return f"{get_settings().effective_frontend_url}/oauth/consent?req={_sign_consent(client, params)}"
 
     async def load_authorization_code(self, client: OAuthClientInformationFull, authorization_code: str) -> AuthorizationCode | None:
         row = await OAuthAuthorizationCode.get_or_none(code=authorization_code, client_id=client.client_id)

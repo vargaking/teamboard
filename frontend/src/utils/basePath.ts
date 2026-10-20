@@ -19,6 +19,15 @@ export function appUrl(path: string): string {
 
 export const LOGIN_PATH = appPath('login');
 
+/**
+ * Origin of the API when it is hosted separately from this frontend (VITE_API_URL at build time,
+ * e.g. "https://teamboard-20i1.onrender.com"); "" means same origin. Never has a trailing slash.
+ */
+export const API_ORIGIN: string = (import.meta.env.VITE_API_URL ?? '').trim().replace(/\/+$/, '');
+
+/** Absolute API base: "<API_ORIGIN>/api" when split, otherwise "<base>api" on this origin. */
+export const API_BASE: string = API_ORIGIN ? `${API_ORIGIN}/api` : appPath('api');
+
 /** Current location as an app route (base stripped) incl. query, e.g. "/oauth/consent?req=x". */
 export function currentAppLocation(): string {
   const { pathname, search } = window.location;
