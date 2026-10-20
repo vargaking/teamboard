@@ -10,7 +10,7 @@ from app.core.config import get_settings
 from app.db import TORTOISE_ORM
 from app.mcp.mount import mount_mcp, run_transport
 from app.realtime import hub
-from app.routers import auth, boards, cards, columns, connect, users, ws
+from app.routers import auth, boards, cards, columns, connect, imports, users, ws
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(name)s: %(message)s")
 settings = get_settings()
@@ -42,6 +42,7 @@ app.add_middleware(
 API_PREFIX = "/api"
 app.include_router(auth.router, prefix=API_PREFIX)
 app.include_router(users.router, prefix=API_PREFIX)
+app.include_router(imports.router, prefix=API_PREFIX)  # before boards: /boards/import/* vs /boards/{id}
 app.include_router(boards.router, prefix=API_PREFIX)
 app.include_router(columns.router, prefix=API_PREFIX)
 app.include_router(cards.router, prefix=API_PREFIX)

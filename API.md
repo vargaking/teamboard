@@ -87,3 +87,30 @@ Two ways to get a token:
 
 Tools: `list_boards`, `get_board`, `get_card`, `search_cards`, `list_users`, `create_card`, `update_card`, `move_card`,
 `add_comment`, `create_column`. Mutations broadcast the same live-update events as the REST API.
+
+## Import a Trello board
+The client reads the Trello JSON export (Board menu → Print and export → Export as JSON) and sends it as JSON.
+Request bodies are capped at 30 MB.
+
+```ts
+type TrelloMemberMatch = { trello_id: string; trello_name: string; trello_username: string | null; card_count: number; suggested_user_id: number | null };
+type TrelloPreview = {
+  title: string; description: string;
+  lists: { name: string; archived: boolean; card_count: number }[];
+  card_count: number; archived_card_count: number; label_count: number; comment_count: number; checklist_count: number;
+  members: TrelloMemberMatch[];
+};
+type TrelloImportOptions = {
+  title?: string;                       // defaults to the Trello board name
+  include_archived?: boolean;           // default false: archived lists and cards are skipped
+  member_map?: Record<string, number>;  // trello member id -> user id (mapped users become board members + assignees)
+};
+```
+
+- `POST /api/boards/import/trello/preview` body `{export: <trello json>}` → `TrelloPreview` (422 if the JSON is not a Trello board export)
+- `POST /api/boards/import/trello` body `{export: <trello json>, options?: TrelloImportOptions}` → `BoardDetail` (201)
+
+Mapping: lists → columns (Trello order), cards → cards (Trello order, `due` → `due_date`), labels → board labels (Trello colour
+names → hex; unnamed labels are named after their colour), checklists → appended to the description as markdown task lists,
+attachments → appended as a link list, `commentCard` actions → comments (authored by the mapped user, otherwise by the
+importer with a "Name (Trello):" prefix). Archived items are only imported with `include_archived`. The importer owns the board.
