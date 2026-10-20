@@ -26,7 +26,7 @@ export default defineConfig({
     },
   },
   build: {
-    // The initial antd chunk is ~935 kB minified (~285 kB gzip). It lives in its own long-cached
+    // The initial antd chunk is ~920 kB minified (~280 kB gzip). It lives in its own long-cached
     // vendor chunk, so the default 500 kB warning is not actionable here.
     chunkSizeWarningLimit: 1000,
     rolldownOptions: {

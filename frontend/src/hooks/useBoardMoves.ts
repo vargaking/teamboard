@@ -6,6 +6,7 @@ import { reorderColumns } from '../api/boards';
 import { getErrorMessage } from '../api/client';
 import type { BoardDetail } from '../api/types';
 import { moveCardInBoard, reorderColumnsInBoard } from '../utils/board';
+import { rememberLocalMove } from './localMoves';
 import { queryKeys } from './queryKeys';
 
 /**
@@ -23,6 +24,7 @@ export function useBoardMoves(boardId: number) {
       const board = queryClient.getQueryData<BoardDetail>(key);
       void queryClient.cancelQueries({ queryKey: key });
       if (board) queryClient.setQueryData(key, moveCardInBoard(board, cardId, columnId, position));
+      rememberLocalMove(cardId);
       return moveCard(cardId, { column_id: columnId, position })
         .then((updated) => {
           queryClient.setQueryData(key, updated);

@@ -651,7 +651,7 @@ body {
 
 .copy-field.is-block .copy-field-value {
   white-space: pre-wrap;
-  word-break: break-all;
+  overflow-wrap: anywhere; /* wrap at spaces first; only split long tokens/URLs when needed */
 }
 
 /* ---------- connect to Claude ---------- */

@@ -135,7 +135,7 @@ function ClaudeCodeTab({ info }: { info: McpInfo }) {
             )
           }
         >
-          <Button type="text" danger size="small" icon={<DeleteOutlined />} aria-label={`Revoke ${token.name}`} />
+          <Button type="text" danger size="small" icon={<DeleteOutlined />} aria-label={`Revoke ${token.name} (${token.prefix})`} />
         </Popconfirm>
       ),
     },

@@ -5,6 +5,7 @@ import { App } from 'antd';
 import { boardChannelUrl } from '../api/live';
 import type { LiveMessage } from '../api/types';
 import { useAuth } from '../auth/AuthContext';
+import { consumeLocalMove } from './localMoves';
 import { queryKeys } from './queryKeys';
 import { useLiveSocket, type LiveStatus } from './useLiveSocket';
 
@@ -30,8 +31,9 @@ export function useBoardSocket(boardId: number): LiveStatus {
         return;
       }
       if (msg.type !== 'board.updated') return;
-      // The mover already applied the server's BoardDetail from POST /cards/{id}/move.
-      if (msg.event === 'card.moved' && msg.actor_id === currentUserId) return;
+      // Skip only the echo of a move made in *this tab* (it already applied the server's
+      // BoardDetail). Same-user moves from elsewhere (another tab, an MCP client) still refetch.
+      if (msg.event === 'card.moved' && msg.actor_id === currentUserId && consumeLocalMove(msg.entity_id)) return;
       void queryClient.invalidateQueries({ queryKey: queryKeys.board(boardId) });
       if (msg.event.startsWith('comment.') && msg.entity_id !== null) {
         void queryClient.invalidateQueries({ queryKey: queryKeys.comments(msg.entity_id) });
