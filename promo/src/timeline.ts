@@ -15,9 +15,9 @@ export const SCENE_CONFIG: SceneConfig[] = [
   { id: 'intro', title: 'Meet TeamBoard', seconds: 7.6, lineStarts: [0.4, 5.2] },
   { id: 'boards', title: 'Boards & cards', seconds: 15.0, lineStarts: [0.4, 4.3, 9.4] },
   { id: 'live', title: 'Live updates', seconds: 10.6, lineStarts: [0.4, 2.6, 7.0] },
-  { id: 'details', title: 'Card details', seconds: 11.4, lineStarts: [0.6, 5.3] },
-  { id: 'filters', title: 'Filters, menus & dark mode', seconds: 14.4, lineStarts: [0.4, 7.2, 11.0] },
-  { id: 'claude', title: 'Claude connector', seconds: 18.6, lineStarts: [0.4, 2.8, 9.4, 14.6] },
+  { id: 'details', title: 'Card details', seconds: 11.7, lineStarts: [0.6, 5.3] },
+  { id: 'filters', title: 'Filters, menus & dark mode', seconds: 15.1, lineStarts: [0.4, 7.7, 12.0] },
+  { id: 'claude', title: 'Claude connector', seconds: 19.6, lineStarts: [0.4, 2.8, 10.2, 15.2] },
   { id: 'import', title: 'Trello import & team', seconds: 13.6, lineStarts: [0.5, 7.6] },
   { id: 'login', title: 'Get started', seconds: 16.0, lineStarts: [0.5, 5.2, 12.3] },
 ];

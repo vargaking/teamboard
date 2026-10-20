@@ -1,0 +1,7 @@
+node_modules/
+out/
+.work/
+# Generated media (re-create with the scripts, see README.md)
+public/clips/*.mp4
+public/audio/music.wav
+# keep: public/clips/clips.json (timing markers), public/audio/voice/*.wav (small), src/data/voice.json

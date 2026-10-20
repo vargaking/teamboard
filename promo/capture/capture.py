@@ -88,6 +88,8 @@ def start_backend(dist: str):
         SEED_ON_STARTUP="true",
         SECRET_KEY="promo-secret-key-1234567890",
         PUBLIC_URL=BASE,
+        # Invite links are built from FRONTEND_URL: show the team's real address in the Team page capture.
+        FRONTEND_URL=os.environ.get("PROMO_FRONTEND_URL", "https://teamboard-sep.vercel.app"),
         STATIC_DIR=dist,
     )
     log = open(os.path.join(WORK, "backend.log"), "w")
@@ -302,6 +304,7 @@ def clip_details(browser, ses: Session):
     m = {}
     rec.set_mouse("main", 900, 700)
     rec.hold(0.4)
+    tile = box(card(page, "Backtest configuration form"))
     rec.glide("main", *rec.center("main", card(page, "Backtest configuration form"), dx=-40), 0.8, arc=0.2)
     rec.hold(0.3)
     m["open"] = rec.count
@@ -312,7 +315,7 @@ def clip_details(browser, ses: Session):
     modal = page.locator(".ant-modal-content")
     b = {"modal": box(modal), "people": box(modal.locator(".ant-select", has_text="Miki Petkovic").first),
          "assignees": box(modal.locator(".ant-select", has_text="Andrada Florea").first),
-         "labels": box(modal.locator(".ant-select", has_text="frontend").first)}
+         "labels": box(modal.locator(".ant-select", has_text="frontend").first), "tile": tile}
     # glide over the people area, then to the comment box
     rec.glide("main", *rec.center("main", modal.locator(".ant-select", has_text="Miki Petkovic").first, dx=40), 0.9)
     m["reviewers"] = rec.count
@@ -576,6 +579,10 @@ def clip_trello(browser, ses: Session):
     rec.glide("main", *rec.center("main", page.locator(".ant-modal-content").get_by_text("Miki Petkovic").first), 0.8)
     rec.hold(1.8)
     btn = page.locator(".ant-modal-footer button.ant-btn-primary").last
+    for _ in range(14):  # scroll the dialog down to its footer
+        page.mouse.wheel(0, 45)
+        rec.frame()
+    rec.hold(0.3)
     rec.glide("main", *rec.center("main", btn), 0.7)
     m["import"] = rec.count
     rec.click("main")
@@ -617,7 +624,8 @@ def clip_team(browser, ses: Session):
     email = page.locator(".ant-modal-content input").first
     rec.glide("main", *rec.center("main", email), 0.6)
     rec.click("main")
-    rec.type("main", "konstantin.s@student.tue.nl", per_char_frames=1)
+    page.keyboard.insert_text("konstantin.s@student.tue.nl")  # at once: the form validates while typing
+    rec.frame(8)
     rec.hold(0.3)
     create = page.locator(".ant-modal-footer button.ant-btn-primary").last
     rec.glide("main", *rec.center("main", create), 0.7)
