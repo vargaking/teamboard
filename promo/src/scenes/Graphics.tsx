@@ -172,40 +172,48 @@ export const IntroScene: React.FC<{ stillFile: string; stillFrame: number }> = (
   );
 };
 
-const Sparkle: React.FC<{ size: number; color?: string }> = ({ size, color = C.claude }) => (
-  <svg width={size} height={size} viewBox="0 0 64 64">
-    {Array.from({ length: 8 }).map((_, i) => (
-      <rect key={i} x="29" y="4" width="6" height="26" rx="3" fill={color} transform={`rotate(${i * 45} 32 32)`} />
-    ))}
-  </svg>
-);
-
-/** "TeamBoard <-> Claude" with the MCP link between them. */
-export const ClaudeIntro: React.FC = () => {
+/** "TeamBoard <-MCP-> Claude / ChatGPT" (text only, no third-party logos), then what the assistant may do. */
+export const ConnectorIntro: React.FC = () => {
   const frame = useCurrentFrame();
   const { fps } = useVideoConfig();
-  const a = spring({ frame: frame - 3, fps, config: { damping: 14 } });
-  const b = spring({ frame: frame - 12, fps, config: { damping: 14 } });
+  const pop = (at: number, damping = 14) => spring({ frame: frame - Math.round(at * fps), fps, config: { damping } });
+  const a = pop(0.1);
   const line = ease(frame, 14, 34);
-  const pill = spring({ frame: frame - 30, fps, config: { damping: 12 } });
+  const pill = pop(1.0, 12);
+  const apps = ['Claude', 'ChatGPT'];
+  const can = ['Read boards & cards', 'Create & move cards', 'Comment'];
   return (
     <AbsoluteFill style={{ fontFamily: DISPLAY }}>
-      <div style={{ position: 'absolute', left: 300, top: 360, display: 'flex', alignItems: 'center', gap: 28, opacity: a, transform: `translateY(${(1 - a) * 30}px)` }}>
+      <div style={{ position: 'absolute', left: 250, top: 300, display: 'flex', alignItems: 'center', gap: 28, opacity: a, transform: `translateY(${(1 - a) * 30}px)` }}>
         <LogoMark size={130} />
         <div style={{ color: 'white', fontSize: 84, fontWeight: 800 }}>TeamBoard</div>
       </div>
-      <div style={{ position: 'absolute', left: 1240, top: 360, display: 'flex', alignItems: 'center', gap: 26, opacity: b, transform: `translateY(${(1 - b) * 30}px)` }}>
-        <div style={{ width: 130, height: 130, borderRadius: 34, background: '#2b1d17', display: 'flex', alignItems: 'center', justifyContent: 'center', border: `2px solid ${C.claude}` }}>
-          <Sparkle size={86} />
-        </div>
-        <div style={{ color: 'white', fontSize: 84, fontWeight: 800 }}>Claude</div>
-      </div>
-      <div style={{ position: 'absolute', left: 900, top: 422, width: 300 * line, height: 6, borderRadius: 3, background: `linear-gradient(90deg, ${C.blue}, ${C.claude})` }} />
-      <div style={{ position: 'absolute', left: 960, top: 395, transform: `scale(${pill})`, fontFamily: MONO, fontSize: 36, fontWeight: 700, color: 'white', background: '#111a33', border: '2px solid rgba(255,255,255,0.35)', padding: '8px 22px', borderRadius: 14 }}>
+      <div style={{ position: 'absolute', left: 860, top: 362, width: 340 * line, height: 6, borderRadius: 3, background: C.blue }} />
+      <div style={{ position: 'absolute', left: 935, top: 335, transform: `scale(${pill})`, fontFamily: MONO, fontSize: 36, fontWeight: 700, color: 'white', background: '#111a33', border: '2px solid rgba(255,255,255,0.35)', padding: '8px 22px', borderRadius: 14 }}>
         MCP
       </div>
-      <div style={{ position: 'absolute', left: 0, right: 0, top: 580, textAlign: 'center', color: C.mist, fontSize: 44, fontWeight: 600, opacity: pill }}>
-        Your boards, inside your Claude conversations
+      <div style={{ position: 'absolute', left: 1230, top: 245, display: 'flex', flexDirection: 'column', gap: 22 }}>
+        {apps.map((name, i) => {
+          const p = pop(1.4 + i * 0.5);
+          return (
+            <div key={name} style={{ fontFamily: FONT, color: 'white', fontSize: 64, fontWeight: 800, padding: '14px 40px', borderRadius: 24, background: 'rgba(255,255,255,0.10)', border: '2px solid rgba(255,255,255,0.3)', opacity: p, transform: `translateX(${(1 - p) * 40}px)` }}>
+              {name}
+            </div>
+          );
+        })}
+      </div>
+      <div style={{ position: 'absolute', left: 0, right: 0, top: 560, display: 'flex', justifyContent: 'center', gap: 22, fontFamily: FONT }}>
+        {can.map((c, i) => {
+          const p = pop(3.6 + i * 0.4);
+          return (
+            <div key={c} style={{ display: 'flex', alignItems: 'center', gap: 14, color: 'white', fontSize: 38, fontWeight: 650, padding: '12px 26px', borderRadius: 999, background: 'rgba(22,119,255,0.28)', border: '1px solid rgba(105,167,255,0.6)', opacity: p, transform: `translateY(${(1 - p) * 20}px)` }}>
+              <Dot color={C.green} size={16} /> {c}
+            </div>
+          );
+        })}
+      </div>
+      <div style={{ position: 'absolute', left: 0, right: 0, top: 680, textAlign: 'center', color: C.mist, fontSize: 44, fontWeight: 600, opacity: pop(5.0) }}>
+        As you, with your permissions
       </div>
     </AbsoluteFill>
   );
@@ -225,7 +233,7 @@ export const ClaudeChat: React.FC = () => {
     <AbsoluteFill style={{ fontFamily: FONT }}>
       <div style={{ position: 'absolute', left: 150, top: 120, width: 1000, height: 760, borderRadius: 28, background: 'rgba(250,247,242,0.97)', boxShadow: '0 50px 120px rgba(0,0,0,0.5)', padding: 44, display: 'flex', flexDirection: 'column', gap: 26 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 14, color: '#5b4636', fontWeight: 700, fontSize: 32 }}>
-          <Sparkle size={40} /> Claude <span style={{ fontWeight: 500, opacity: 0.7 }}>+ TeamBoard connector</span>
+          Claude <span style={{ fontWeight: 500, opacity: 0.7 }}>+ TeamBoard connector</span>
         </div>
         <div style={{ alignSelf: 'flex-end', maxWidth: 760, background: '#ede6dc', color: '#2b2118', fontSize: 36, lineHeight: 1.3, padding: '20px 26px', borderRadius: 22, opacity: pop(0.1) }}>
           {typed}
@@ -247,7 +255,7 @@ export const ClaudeChat: React.FC = () => {
         </div>
       </div>
       <div style={{ position: 'absolute', left: 1230, top: 170, width: 560, display: 'flex', flexDirection: 'column', gap: 20 }}>
-        <div style={{ color: 'white', fontSize: 44, fontWeight: 800, opacity: pop(0.6) }}>Claude can</div>
+        <div style={{ color: 'white', fontSize: 44, fontWeight: 800, opacity: pop(0.6) }}>Your assistant can</div>
         {caps.map((c, i) => {
           const p = pop(0.9 + i * 0.35);
           return (

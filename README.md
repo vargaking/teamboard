@@ -70,9 +70,9 @@ ruff check app tests && ruff format --check app tests
 - **Review counts** panel on every board: per member, how many cards they are reviewing that are still open vs. in a Done column (title matching done/completed/closed/finished/shipped, else the last column); click a row to filter. Updates live.
 - **Team page**: admins add users directly or create invite links (optional e-mail/board, expiry, single or multi-use); invitees set their name and password and land logged in.
 - **Import from Trello** (Boards page): upload the board's JSON export, map Trello members to users, choose whether to include archived items. Lists, cards, due dates, labels, checklists (as task lists), attachments (as links) and comments come across.
-- **Claude connector (MCP)**: the backend is an MCP server, so Claude can list/search boards, create, update and move
-  cards, and comment — as you, with your permissions. claude.ai connects through OAuth (log in once on the consent page);
-  Claude Code and scripts use a personal token from *avatar menu → Connect to Claude*. See `API.md` for the tool list.
+- **AI assistant connector (MCP)**: the backend is an MCP server, so Claude or ChatGPT can list/search boards, create, update
+  and move cards, and comment — as you, with your permissions. claude.ai and ChatGPT connect through OAuth (log in once on the
+  consent page); Claude Code, Codex and scripts use a personal token from *avatar menu → Connect an AI assistant*. See `API.md`.
 - Filters: by assignee ("assigned to me"), by reviewer ("reviewed by me" / "no reviewer") and title search; drag-and-drop stays correct while filters hide cards.
 - **Live updates:** every mutation is broadcast over a per-board WebSocket (`/api/ws/boards/{id}`) and a global
   board-list channel (`/api/ws/boards`); clients refetch on receipt. Protocol in [`API.md`](API.md).
@@ -135,10 +135,11 @@ Both configs forward WebSocket upgrades (required for live updates). For HTTPS, 
 containers stay plain HTTP on localhost. Updating: `git pull && docker compose up -d --build` (migrations run on start).
 Backups: `docker compose exec db pg_dump -U teamboard teamboard > backup.sql`.
 
-## Connecting Claude
+## Connecting an AI assistant (Claude, ChatGPT, …)
 
 - **claude.ai**: Settings → Connectors → *Add custom connector* → paste `https://<your PUBLIC_URL>/api/mcp` → Connect →
   log in with your TeamBoard account on the consent page. Needs `PUBLIC_URL` set to the HTTPS address users reach the app at.
+- **ChatGPT** (paid plans): Settings → Apps & Connectors → Developer mode → Create → paste the same URL → authorize on the consent page.
 - **Claude Code**: create a personal token in *Connect to Claude*, then
   `claude mcp add --transport http teamboard https://<PUBLIC_URL>/api/mcp --header "Authorization: Bearer tb_pat_…"`.
 - Tokens are stored hashed; OAuth access tokens last 1 h and are refreshed automatically (refresh tokens rotate, 30 days).
