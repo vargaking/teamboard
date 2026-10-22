@@ -37,13 +37,16 @@ jobs:
         env:
           TEST_DATABASE_URL: postgres://teamboard:teamboard@localhost:5432/teamboard_test
       - name: Migrations are up to date
+        # Runs in its own empty database: the Postgres test run above creates tables without Aerich history,
+        # which would make `aerich upgrade` fail on "relation already exists".
         run: |
+          PGPASSWORD=teamboard psql -h localhost -U teamboard -d teamboard_test -c "CREATE DATABASE teamboard_migrations;"
           aerich upgrade
           # `aerich migrate` must report no model changes compared to the committed migrations
           aerich migrate --name ci_check | tee /tmp/migrate.log
           grep -q "No changes detected" /tmp/migrate.log
         env:
-          DATABASE_URL: postgres://teamboard:teamboard@localhost:5432/teamboard_test
+          DATABASE_URL: postgres://teamboard:teamboard@localhost:5432/teamboard_migrations
 
   frontend:
     runs-on: ubuntu-latest
