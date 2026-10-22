@@ -1,5 +1,6 @@
 import voice from './data/voice.json';
 import { FPS } from './theme';
+import { connectorLayout } from './layout';
 
 /**
  * Scene timing. Every scene's length is driven by its voice-over lines (from audio/make_voice.py -> data/voice.json)
@@ -18,7 +19,11 @@ export const SCENE_CONFIG: SceneConfig[] = [
   { id: 'details', title: 'Card details', seconds: 11.7, lineStarts: [0.6, 5.3] },
   { id: 'reviews', title: 'Review counts', seconds: 13.9, lineStarts: [2.4] },
   { id: 'filters', title: 'Filters, menus & dark mode', seconds: 15.1, lineStarts: [0.4, 7.7, 12.0] },
-  { id: 'claude', title: 'AI connector: Claude or ChatGPT', seconds: 19.6, lineStarts: [0.4, 2.8, 10.2, 15.2] },
+  (() => {
+    // the connector scene is laid out from its capture markers (see layout.ts)
+    const L = connectorLayout();
+    return { id: 'claude' as const, title: 'AI connector: Claude or ChatGPT', seconds: L.end, lineStarts: [0.4, L.aAt + 0.3, L.chatAt + 0.2, L.bAt + 0.2] };
+  })(),
   { id: 'import', title: 'Trello import & team', seconds: 13.6, lineStarts: [0.5, 7.6] },
   { id: 'login', title: 'Get started', seconds: 16.0, lineStarts: [0.5, 5.2, 12.3] },
 ];

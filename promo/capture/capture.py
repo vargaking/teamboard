@@ -17,6 +17,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import re
 import os
 import shutil
 import subprocess
@@ -466,7 +467,7 @@ def clip_claude(browser, ses: Session):
     rec.click("main")
     page.wait_for_selector(".ant-dropdown:visible")
     rec.hold(0.4)
-    item = page.locator(".ant-dropdown:visible .ant-dropdown-menu-item", has_text="Connect to Claude").first
+    item = page.locator(".ant-dropdown:visible .ant-dropdown-menu-item", has_text=re.compile("Connect (to Claude|an AI assistant)")).first
     b = {"menu": box(page.locator(".ant-dropdown:visible").first)}
     rec.glide("main", *rec.center("main", item), 0.5)
     m["menu"] = rec.count
@@ -480,8 +481,16 @@ def clip_claude(browser, ses: Session):
     b["steps"] = box(page.locator(".ant-modal-content .connect-steps"))
     rec.glide("main", *rec.center("main", page.locator(".ant-modal-content .connect-steps")), 0.8)
     rec.hold(2.2)
-    tab = page.locator(".ant-modal-content .ant-tabs-tab", has_text="Claude Code").first
-    if tab.count():
+    tab = page.locator(".ant-modal-content .ant-tabs-tab", has_text="ChatGPT").first
+    if tab.count():  # builds with the "Connect an AI assistant" dialog
+        rec.glide("main", *rec.center("main", tab), 0.6)
+        m["chatgptTab"] = rec.count
+        rec.click("main")
+        rec.hold(0.3)
+        b["chatgptSteps"] = box(page.locator(".ant-modal-content .ant-tabs-tabpane-active").first)
+        rec.hold(2.4)
+    else:
+        tab = page.locator(".ant-modal-content .ant-tabs-tab", has_text="Claude Code").first
         rec.glide("main", *rec.center("main", tab), 0.6)
         m["codeTab"] = rec.count
         rec.click("main")
@@ -746,6 +755,25 @@ def clip_reviews(browser, ses: Session):
     ctx.close()
 
 
+def replay_earlier_state():
+    """When later clips are captured on their own: apply what the earlier clips did to the board, via REST."""
+    tok = login_token("daniel")
+
+    def call(method, path, body=None):
+        req = urllib.request.Request(BASE + path, data=json.dumps(body).encode() if body is not None else None, method=method)
+        req.add_header("Content-Type", "application/json")
+        req.add_header("Authorization", f"Bearer {tok}")
+        raw = urllib.request.urlopen(req).read()
+        return json.loads(raw) if raw else None
+
+    board = call("GET", "/api/boards/1")
+    cols = {c["title"]: c for c in board["columns"]}
+    cards = {c["title"]: c["id"] for col in board["columns"] for c in col["cards"]}
+    call("POST", f"/api/cards/{cards['Login page + auth context']}/move", {"column_id": cols["Review"]["id"], "position": len(cols["Review"]["cards"])})
+    call("POST", f"/api/cards/{cards['Market data importer (CSV + Yahoo)']}/move", {"column_id": cols["Review"]["id"], "position": 0})
+    call("POST", f"/api/cards/{cards['Backtest configuration form']}/comments", {"body": "Reviewed: looks great, merging!"})
+
+
 ORDER = ["boards", "drag", "live", "details", "reviews", "filters", "context", "claude", "dark", "trello", "team", "login"]
 CLIP_FNS = {name: globals()[f"clip_{name}"] for name in ORDER}
 
@@ -767,6 +795,8 @@ def main():
     try:
         subprocess.run([sys.executable, os.path.join(HERE, "seed_demo.py"), BASE], check=True)
         ses = Session()
+        if args.only and "drag" not in args.only and any(c in args.only for c in ("details", "filters", "context", "claude", "dark")):
+            replay_earlier_state()
         with sync_playwright() as p:
             browser = p.chromium.launch()
             for name in ORDER:

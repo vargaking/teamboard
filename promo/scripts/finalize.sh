@@ -22,7 +22,7 @@ $FFMPEG -hide_banner -loglevel error -y -ss 14 -i "$OUT" -t 10 -c:v libx264 -crf
 
 # key frames
 mkdir -p out/frames
-for t in 3 9 19 26 35 43 47 57 63 70 80 90 95 108 113; do
+for t in 3 9 19 26 35 43 52 58 70 85 92 100 110 122 131; do
   $FFMPEG -hide_banner -loglevel error -y -ss "$t" -i "$OUT" -frames:v 1 "out/frames/t$(printf %03d "$t")s.png"
 done
 echo done

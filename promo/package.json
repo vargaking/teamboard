@@ -7,7 +7,7 @@
     "studio": "remotion studio",
     "capture": "python3 capture/capture.py",
     "voice": ".work/ttsvenv/bin/python audio/make_voice.py",
-    "music": "python3 audio/make_music.py 114.5",
+    "music": "python3 audio/make_music.py 134",
     "render": "remotion render src/index.ts TeamBoardPromo out/teamboard-promo.mp4 && sh scripts/finalize.sh",
     "stills": "node scripts/stills.mjs out/stills 100 600 1100 1400 2200 2700 3300",
     "timeline": "tsx scripts/timeline.ts"

@@ -3,6 +3,7 @@ import { AbsoluteFill, Sequence, useCurrentFrame, useVideoConfig } from 'remotio
 import { Box, Cam, Footage, Highlight, Magnifier, Segment, boxOf, cameraAt, clip, focus, marker, project } from '../components/Footage';
 import { BrowserWindow, Callout, EyeIcon, Pulse } from '../components/UI';
 import { C, FONT } from '../theme';
+import { connectorLayout } from '../layout';
 import { ClaudeChat, ConnectorIntro, EndCard, UrlScene } from './Graphics';
 
 // Main footage window: 1440 px wide content (= 1:1 with the 1440 CSS px capture viewport, rendered from 2560 px video).
@@ -270,35 +271,21 @@ export const FiltersScene: React.FC = () => {
 };
 
 // ---------------------------------------------------------------------------------------------------------------
-/** Scene-time layout of the connector scene, shared with timeline.ts (voice line starts and scene length). */
-export function connectorLayout() {
-  const aAt = 8.3; // after the MCP intro graphic
-  const aFrom = 30;
-  const tabKey = clip('claude').markers.chatgptTab !== undefined ? 'chatgptTab' : 'codeTab';
-  const aTo = Math.min(clip('claude').frames - 1, marker('claude', tabKey) + 80);
-  const chatAt = aAt + (aTo - aFrom) / 30;
-  const bAt = chatAt + 5.1;
-  const bFrom = marker('claude', 'create') - 12;
-  const appeared = tm('claude', 'appeared', bAt, bFrom);
-  const sameAt = appeared + 2.6;
-  return { aAt, aFrom, aTo, tabKey, chatAt, bAt, bFrom, appeared, sameAt, end: sameAt + 3.4 };
-}
-
 export const ClaudeScene: React.FC = () => {
   const frame = useCurrentFrame();
   const t = frame / 30;
   const L = connectorLayout();
-  const { aAt, aFrom, aTo, chatAt, bAt, bFrom, appeared } = L;
+  const { aAt, aFrom, aRate, aTo, chatAt, bAt, bFrom, appeared } = L;
   const segments: Segment[] = [
-    { clip: 'claude', at: aAt, from: aFrom, to: aTo },
+    { clip: 'claude', at: aAt, from: aFrom, to: aTo, rate: aRate },
     { clip: 'claude', at: bAt, from: bFrom },
   ];
   const menu = boxOf('claude', 'menu');
   const dialog = boxOf('claude', 'dialog');
   const newCard = boxOf('claude', 'newCard');
-  const menuT = tm('claude', 'menu', aAt, aFrom);
-  const dialogT = tm('claude', 'dialog', aAt, aFrom);
-  const tabT = tm('claude', L.tabKey, aAt, aFrom);
+  const menuT = tm('claude', 'menu', aAt, aFrom, aRate);
+  const dialogT = tm('claude', 'dialog', aAt, aFrom, aRate);
+  const tabT = tm('claude', L.tabKey, aAt, aFrom, aRate);
   const cams: Cam[] = [
     { t: aAt, s: 1 },
     { t: menuT - 0.6, ...focus(0, pad(menu, 120, 60), MAIN_VIEW, 0.45, 1.8) },
@@ -318,8 +305,8 @@ export const ClaudeScene: React.FC = () => {
       {showWindow && <MainWindow segments={segments} cams={cams} highlights={[{ box: newCard, from: appeared + 0.1, to: L.end, color: C.claude }]} />}
       {t >= chatAt && t < bAt && <ClaudeChatSeq at={chatAt} />}
       <Callout x={1680} y={47} align="right" text="Avatar menu → Connect an AI assistant" from={menuT - 0.4} to={dialogT + 0.8} color={C.claude} />
-      <Callout x={1680} y={47} align="right" text="claude.ai, Claude Code" from={dialogT + 1.1} to={tabT - 0.2} color={C.claude} />
-      <Callout x={1680} y={47} align="right" text="…or ChatGPT" from={tabT + 0.1} to={chatAt - 0.2} color={C.green} />
+      <Callout x={1680} y={47} align="right" text="Steps for claude.ai, Claude Code" from={dialogT + 1.1} to={tabT - 0.2} color={C.claude} />
+      <Callout x={1680} y={47} align="right" text="…and for ChatGPT" from={tabT + 0.1} to={chatAt - 0.2} color={C.green} />
       {t > appeared + 1.0 && <Callout x={cardScreen.x + 60} y={cardScreen.y} text="Created by Claude, live" from={appeared + 1.0} to={L.end} color={C.claude} pointTo={{ x: cardScreen.x + 4, y: cardScreen.y }} />}
       {t >= L.sameAt && (
         <div style={{ position: 'absolute', left: 0, right: 0, top: 860, display: 'flex', justifyContent: 'center', opacity: sameP, transform: `translateY(${(1 - sameP) * 16}px)` }}>
