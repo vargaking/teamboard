@@ -88,6 +88,10 @@ one Render web service is enough (no CORS, OAuth discovery at the origin root, W
    `PUBLIC_URL` defaults to the service's `onrender.com` URL. First deploy runs migrations and the seed.
 3. Open the URL, log in, change passwords. Add the Claude connector with `https://<service>.onrender.com/api/mcp`.
 
+Deploys: CI (`.github/workflows/ci.yml`) triggers the Render deploy after all checks pass on `master`, through the
+service's **Deploy Hook** stored as the GitHub secret `RENDER_DEPLOY_HOOK` (Render → service → Settings → Deploy Hook;
+GitHub → repo → Settings → Secrets → Actions). A red CI run never reaches production. Vercel deploys the frontend on push.
+
 Plan note: Render's **free** instance sleeps after 15 min idle and takes 30-60 s to wake. That breaks the claude.ai
 OAuth handshake (10 s limit on discovery/token calls) and makes live updates lag after idle; the **starter** plan
 (always-on) avoids both. Supabase free projects pause after a week without API/DB activity — the board's own traffic
