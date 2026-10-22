@@ -19,7 +19,8 @@ import { useBoard, useCreateColumn } from '../hooks/useBoards';
 import { PlusOutlined } from '@ant-design/icons';
 import type { MenuProps } from 'antd';
 import { useBoardSocket } from '../hooks/useBoardSocket';
-import { findCard } from '../utils/board';
+import { doneColumnIds, findCard, reviewCounts } from '../utils/board';
+import { ReviewPanel } from '../components/board/ReviewPanel';
 
 function matchesPerson(people: User[], filter: PersonFilter, currentUserId: number): boolean {
   if (filter === 'all') return true;
@@ -66,6 +67,22 @@ function BoardView({ board }: { board: BoardDetail }) {
     }
     return map;
   }, [board.columns, filterActive, predicate]);
+
+  // "Done" columns + per-member review counts, derived from the live board cache.
+  const doneIds = useMemo(() => doneColumnIds(board.columns), [board.columns]);
+  const counts = useMemo(() => reviewCounts(board), [board]);
+  const activeReviewerId =
+    reviewerFilter === 'me' ? user.id : typeof reviewerFilter === 'number' ? reviewerFilter : null;
+  const toggleReviewerFilter = useCallback(
+    (userId: number) =>
+      setReviewerFilter((prev) => {
+        const current = prev === 'me' ? user.id : prev;
+        if (current === userId) return 'all';
+        // The reviewer Select lists the current user as "Reviewed by me", not by id.
+        return userId === user.id ? 'me' : userId;
+      }),
+    [user.id],
+  );
 
   const visibleIds = useMemo(
     () =>
@@ -136,49 +153,55 @@ function BoardView({ board }: { board: BoardDetail }) {
           onReviewerFilterChange={setReviewerFilter}
           search={search}
           onSearchChange={setSearch}
+          reviewCounts={counts}
         />
-        <ContextMenu
-          buildItems={canvasMenuItems}
-          onSelect={onCanvasMenu}
-          className="board-canvas-wrap"
-          ariaLabel="Board canvas"
-        >
-          <DragDropContext onDragEnd={onDragEnd}>
-            <Droppable droppableId={COLUMN_DROPPABLE_ID} direction="horizontal" type={DND_TYPE_COLUMN}>
-              {(provided) => (
-                <div className="board-canvas" ref={provided.innerRef} {...provided.droppableProps}>
-                  {board.columns.map((column, index) => (
-                    <BoardColumn
-                      key={column.id}
-                      boardId={board.id}
-                      column={column}
-                      visibleCards={visibleByColumn.get(column.id) ?? column.cards}
-                      filtered={filterActive}
-                      index={index}
-                      onOpenCard={openCardModal}
-                    />
-                  ))}
-                  {provided.placeholder}
-                  <div className="add-column">
-                    <InlineAddInput
-                      ref={addColumnRef}
-                      buttonLabel="Add column"
-                      placeholder="Column title"
-                      submitLabel="Add column"
-                      loading={createColumn.isPending}
-                      onSubmit={(title) =>
-                        createColumn.mutateAsync(title).catch((err: unknown) => {
-                          void message.error(getErrorMessage(err, 'Could not add column'));
-                          throw err;
-                        })
-                      }
-                    />
+        <div className="board-body">
+          {/* Outside the DnD scroll container: the canvas stays the only scrolling droppable parent. */}
+          <ReviewPanel counts={counts} activeUserId={activeReviewerId} onSelect={toggleReviewerFilter} />
+          <ContextMenu
+            buildItems={canvasMenuItems}
+            onSelect={onCanvasMenu}
+            className="board-canvas-wrap"
+            ariaLabel="Board canvas"
+          >
+            <DragDropContext onDragEnd={onDragEnd}>
+              <Droppable droppableId={COLUMN_DROPPABLE_ID} direction="horizontal" type={DND_TYPE_COLUMN}>
+                {(provided) => (
+                  <div className="board-canvas" ref={provided.innerRef} {...provided.droppableProps}>
+                    {board.columns.map((column, index) => (
+                      <BoardColumn
+                        key={column.id}
+                        boardId={board.id}
+                        column={column}
+                        visibleCards={visibleByColumn.get(column.id) ?? column.cards}
+                        filtered={filterActive}
+                        inDone={doneIds.has(column.id)}
+                        index={index}
+                        onOpenCard={openCardModal}
+                      />
+                    ))}
+                    {provided.placeholder}
+                    <div className="add-column">
+                      <InlineAddInput
+                        ref={addColumnRef}
+                        buttonLabel="Add column"
+                        placeholder="Column title"
+                        submitLabel="Add column"
+                        loading={createColumn.isPending}
+                        onSubmit={(title) =>
+                          createColumn.mutateAsync(title).catch((err: unknown) => {
+                            void message.error(getErrorMessage(err, 'Could not add column'));
+                            throw err;
+                          })
+                        }
+                      />
+                    </div>
                   </div>
-                </div>
-              )}
-            </Droppable>
-          </DragDropContext>
-        </ContextMenu>
+                )}
+              </Droppable>
+            </DragDropContext>
+          </ContextMenu>
+        </div>
         {openCard && (
           <CardModal
             key={openCard.card.id}

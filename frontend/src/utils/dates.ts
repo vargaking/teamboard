@@ -19,10 +19,6 @@ export function parseDueDate(value: string): Dayjs {
 
 export type DueStatus = 'overdue' | 'soon' | 'normal';
 
-export function isDoneColumnTitle(title: string): boolean {
-  return title.trim().toLowerCase() === 'done';
-}
-
 /**
  * overdue: due date before today (and the card is not in a "Done" column)
  * soon:    due today or within the next 2 days (and not in a "Done" column)

@@ -21,7 +21,8 @@ import type { BoardDetail, Card, CardUpdate, Column } from '../../api/types';
 import { getErrorMessage } from '../../api/client';
 import { useCurrentUser } from '../../auth/AuthContext';
 import { useComments, useCreateComment, useDeleteCard, useDeleteComment, useUpdateCard } from '../../hooks/useCards';
-import { DATE_FORMAT, dayjs, getDueStatus, isDoneColumnTitle, parseDueDate, parseTimestamp } from '../../utils/dates';
+import { DATE_FORMAT, dayjs, getDueStatus, parseDueDate, parseTimestamp } from '../../utils/dates';
+import { doneColumnIds } from '../../utils/board';
 import { LabelTag } from '../LabelTag';
 import { UserAvatar } from '../UserAvatar';
 import { MemberSelect } from './MemberSelect';
@@ -195,7 +196,7 @@ export function CardModal({ board, card, column, onClose }: Props) {
     save({ description }, 'Could not save description', () => setDescriptionDirty(false));
   };
 
-  const dueStatus = card.due_date ? getDueStatus(card.due_date, isDoneColumnTitle(column.title)) : null;
+  const dueStatus = card.due_date ? getDueStatus(card.due_date, doneColumnIds(board.columns).has(column.id)) : null;
 
   return (
     <Modal

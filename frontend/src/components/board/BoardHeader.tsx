@@ -10,6 +10,7 @@ import type { LiveStatus } from '../../hooks/useLiveSocket';
 import { LiveIndicator } from '../LiveIndicator';
 import { UserAvatar, UserAvatarGroup } from '../UserAvatar';
 import { DangerMenu } from './DangerMenu';
+import type { ReviewCount } from '../../utils/board';
 import { EditableText } from './EditableText';
 import { LabelsModal } from './LabelsModal';
 import { MembersModal } from './MembersModal';
@@ -26,6 +27,8 @@ type Props = {
   onReviewerFilterChange: (value: PersonFilter) => void;
   search: string;
   onSearchChange: (value: string) => void;
+  /** Per-member review counts, shown in the member avatar tooltips. */
+  reviewCounts: ReviewCount[];
 };
 
 type PersonFilterSelectProps = {
@@ -87,6 +90,7 @@ export function BoardHeader({
   onReviewerFilterChange,
   search,
   onSearchChange,
+  reviewCounts,
 }: Props) {
   const user = useCurrentUser();
   const navigate = useNavigate();
@@ -131,7 +135,17 @@ export function BoardHeader({
           </Typography.Text>
         </div>
         <Space size={8} wrap>
-          <UserAvatarGroup users={board.members} size="default" max={6} />
+          <UserAvatarGroup
+            users={board.members}
+            size="default"
+            max={6}
+            tooltipFor={(u) => {
+              const c = reviewCounts.find((r) => r.user.id === u.id);
+              return c && (c.inProgress > 0 || c.done > 0)
+                ? `${u.name} · reviewing ${c.inProgress} · ${c.done} reviewed`
+                : u.name;
+            }}
+          />
           <Button icon={<TeamOutlined />} onClick={() => setMembersOpen(true)}>
             Members
           </Button>

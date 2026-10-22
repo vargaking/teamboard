@@ -1,4 +1,4 @@
-import type { BoardDetail, Card, CardUpdate, Column } from '../api/types';
+import type { BoardDetail, Card, CardUpdate, Column, User } from '../api/types';
 
 function renumber(cards: Card[]): Card[] {
   return cards.map((card, index) => (card.position === index ? card : { ...card, position: index }));
@@ -108,3 +108,49 @@ export function visibleIndexToRealIndex(
   const lastIdx = real.indexOf(visible[visible.length - 1]);
   return lastIdx === -1 ? real.length : lastIdx + 1;
 }
+
+// ---------------------------------------------------------------- "done" columns & review counts
+
+const DONE_TITLE = /\b(done|complete[d]?|closed|finished|shipped)\b/i;
+
+/** Title-based "done" check: Done, Completed, Closed, Finished, Shipped (whole words, any case). */
+export function isDoneColumn(title: string): boolean {
+  return DONE_TITLE.test(title);
+}
+
+/**
+ * Ids of the board's "done" columns: every column whose title matches isDoneColumn; if none
+ * matches, the last column. Used by both overdue highlighting and review counts so they agree.
+ */
+export function doneColumnIds(columns: Pick<Column, 'id' | 'title'>[]): Set<number> {
+  const matching = columns.filter((c) => isDoneColumn(c.title)).map((c) => c.id);
+  if (matching.length > 0) return new Set(matching);
+  const last = columns[columns.length - 1];
+  return new Set(last ? [last.id] : []);
+}
+
+export type ReviewCount = { user: User; inProgress: number; done: number };
+
+/**
+ * Per board member: cards they review outside / inside "done" columns. Sorted by in-progress
+ * desc, then done desc, then name; members with 0/0 end up last.
+ */
+export function reviewCounts(board: Pick<BoardDetail, 'members' | 'columns'>): ReviewCount[] {
+  const done = doneColumnIds(board.columns);
+  const counts = new Map<number, ReviewCount>(board.members.map((u) => [u.id, { user: u, inProgress: 0, done: 0 }]));
+  for (const column of board.columns) {
+    const isDone = done.has(column.id);
+    for (const card of column.cards) {
+      for (const reviewer of card.reviewers) {
+        const entry = counts.get(reviewer.id);
+        if (!entry) continue; // reviewer is no longer a board member
+        if (isDone) entry.done += 1;
+        else entry.inProgress += 1;
+      }
+    }
+  }
+  return [...counts.values()].sort(
+    (a, b) => b.inProgress - a.inProgress || b.done - a.done || a.user.name.localeCompare(b.user.name),
+  );
+}
+

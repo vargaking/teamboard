@@ -17,7 +17,6 @@ import { DND_TYPE_CARD } from '../../hooks/useBoardDnd';
 import { useBoardMoves } from '../../hooks/useBoardMoves';
 import { useDeleteColumn, useUpdateColumn } from '../../hooks/useBoards';
 import { useCreateCard } from '../../hooks/useCards';
-import { isDoneColumnTitle } from '../../utils/dates';
 import { ContextMenu } from '../ContextMenu';
 import { useBoardView } from './BoardViewContext';
 import { CardTile } from './CardTile';
@@ -32,6 +31,8 @@ type Props = {
   visibleCards: Card[];
   index: number;
   filtered: boolean;
+  /** "Done" column per doneColumnIds(): no overdue highlighting, counts as reviewed. */
+  inDone: boolean;
   onOpenCard: (cardId: number) => void;
 };
 
@@ -59,7 +60,7 @@ export function planSortMoves(cards: Card[], sorted: Card[]): { cardId: number; 
   return moves;
 }
 
-function BoardColumnInner({ boardId, column, visibleCards, index, filtered, onOpenCard }: Props) {
+function BoardColumnInner({ boardId, column, visibleCards, index, filtered, inDone, onOpenCard }: Props) {
   const { message, modal } = App.useApp();
   const view = useBoardView();
   const updateColumn = useUpdateColumn(boardId);
@@ -68,7 +69,6 @@ function BoardColumnInner({ boardId, column, visibleCards, index, filtered, onOp
   const { moveCardTo, moveColumn } = useBoardMoves(boardId);
   const titleRef = useRef<EditableTextHandle>(null);
   const addCardRef = useRef<InlineAddInputHandle>(null);
-  const inDone = isDoneColumnTitle(column.title);
 
   const cardCount = column.cards.length;
   const deleteDescription =
