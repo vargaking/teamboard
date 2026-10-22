@@ -67,6 +67,7 @@ ruff check app tests && ruff format --check app tests
 - Columns: create, rename, drag to reorder, delete (cascades cards). New boards start with *To do / In progress / Review / Done*.
 - Cards: drag between/within columns, title, description, due date (overdue/soon highlighting), multiple assignees and reviewers (board members only; reviewers shown with an eye icon), coloured labels, comments. The open card is in the URL (`?card=ID`) so it can be linked.
 - Right-click context menus on cards, columns and the canvas. Dark mode.
+- **Review counts** panel on every board: per member, how many cards they are reviewing that are still open vs. in a Done column (title matching done/completed/closed/finished/shipped, else the last column); click a row to filter. Updates live.
 - **Team page**: admins add users directly or create invite links (optional e-mail/board, expiry, single or multi-use); invitees set their name and password and land logged in.
 - **Import from Trello** (Boards page): upload the board's JSON export, map Trello members to users, choose whether to include archived items. Lists, cards, due dates, labels, checklists (as task lists), attachments (as links) and comments come across.
 - **Claude connector (MCP)**: the backend is an MCP server, so Claude can list/search boards, create, update and move
