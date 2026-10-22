@@ -8,23 +8,21 @@ import {
   CheckOutlined,
   ClockCircleOutlined,
   DeleteOutlined,
-  EyeInvisibleOutlined,
   EyeOutlined,
   ExportOutlined,
   LinkOutlined,
   MessageOutlined,
   SwapOutlined,
   TagsOutlined,
-  UserAddOutlined,
-  UserDeleteOutlined,
+  UserOutlined,
 } from '@ant-design/icons';
-import type { Card } from '../../api/types';
+import type { Card, User } from '../../api/types';
 import { useCardActions, type DuePreset } from '../../hooks/useCardActions';
 import { findCard } from '../../utils/board';
 import { formatDueDate, getDueStatus } from '../../utils/dates';
 import { ContextMenu, KEEP_OPEN } from '../ContextMenu';
 import { LabelTag } from '../LabelTag';
-import { UserAvatarGroup } from '../UserAvatar';
+import { UserAvatar, UserAvatarGroup } from '../UserAvatar';
 import { useBoardView } from './BoardViewContext';
 
 type Props = {
@@ -35,6 +33,20 @@ type Props = {
 };
 
 const DUE_TOOLTIP = { overdue: 'Overdue', soon: 'Due soon', normal: 'Due date' } as const;
+
+/**
+ * People for an Assignees/Reviewers submenu: the current user first ("(me)"), then the other board
+ * members alphabetically. People already on the card who are no longer members stay listed (checked)
+ * so they can still be removed.
+ */
+function peopleOptions(members: User[], current: User[], meId: number): User[] {
+  const byId = new Map(members.map((m) => [m.id, m]));
+  for (const p of current) if (!byId.has(p.id)) byId.set(p.id, p);
+  const all = [...byId.values()];
+  const me = all.filter((u) => u.id === meId);
+  const others = all.filter((u) => u.id !== meId).sort((a, b) => a.name.localeCompare(b.name));
+  return [...me, ...others];
+}
 
 const DUE_PRESETS: { key: DuePreset; label: string }[] = [
   { key: 'today', label: 'Today' },
@@ -53,9 +65,19 @@ function CardTileInner({ card, index, inDoneColumn, onOpen }: Props) {
     if (!board) return [];
     const current = findCard(board, card.id);
     const fresh = current?.card ?? card;
-    const isMember = board.members.some((m) => m.id === actions.userId);
-    const assigned = fresh.assignees.some((a) => a.id === actions.userId);
-    const reviewing = fresh.reviewers.some((r) => r.id === actions.userId);
+    const peopleItems = (role: 'assignee' | 'reviewer', current: User[]): MenuProps['items'] => {
+      const checked = new Set(current.map((u) => u.id));
+      return peopleOptions(board.members, current, actions.userId).map((u) => ({
+        key: `${role}:${u.id}`,
+        label: (
+          <span className="menu-check-item" aria-checked={checked.has(u.id)} role="menuitemcheckbox">
+            <CheckOutlined style={{ visibility: checked.has(u.id) ? 'visible' : 'hidden' }} />
+            <UserAvatar user={u} size={20} tooltip={false} />
+            <span>{u.id === actions.userId ? `${u.name} (me)` : u.name}</span>
+          </span>
+        ),
+      }));
+    };
     const labelIds = new Set(fresh.labels.map((l) => l.id));
     const otherColumns = board.columns.filter((c) => c.id !== current?.column.id);
 
@@ -70,16 +92,18 @@ function CardTileInner({ card, index, inDoneColumn, onOpen }: Props) {
       },
       { type: 'divider' },
       {
-        key: 'assign',
-        icon: assigned ? <UserDeleteOutlined /> : <UserAddOutlined />,
-        label: assigned ? 'Unassign me' : 'Assign to me',
-        disabled: !isMember && !assigned,
+        key: 'assignees',
+        icon: <UserOutlined />,
+        label: 'Assignees',
+        popupClassName: 'context-menu people-submenu',
+        children: peopleItems('assignee', fresh.assignees),
       },
       {
-        key: 'review',
-        icon: reviewing ? <EyeInvisibleOutlined /> : <EyeOutlined />,
-        label: reviewing ? 'Remove me as reviewer' : 'Set me as reviewer',
-        disabled: !isMember && !reviewing,
+        key: 'reviewers',
+        icon: <EyeOutlined />,
+        label: 'Reviewers',
+        popupClassName: 'context-menu people-submenu',
+        children: peopleItems('reviewer', fresh.reviewers),
       },
       {
         key: 'due',
@@ -125,12 +149,10 @@ function CardTileInner({ card, index, inDoneColumn, onOpen }: Props) {
       case 'move':
         if (board) actions.moveToColumnEnd(board, fresh, Number(arg));
         return;
-      case 'assign':
-        actions.toggleMe(fresh, 'assignee');
-        return;
-      case 'review':
-        actions.toggleMe(fresh, 'reviewer');
-        return;
+      case 'assignee':
+      case 'reviewer':
+        actions.togglePerson(fresh, kind, Number(arg));
+        return KEEP_OPEN; // checkable, like labels
       case 'due':
         actions.setDue(fresh, arg as DuePreset);
         return;

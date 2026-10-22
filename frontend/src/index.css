@@ -885,3 +885,9 @@ body {
   color: var(--text-secondary);
 }
 
+/* long member lists in the card menu's Assignees/Reviewers submenus */
+.people-submenu .ant-dropdown-menu {
+  max-height: 360px;
+  overflow-y: auto;
+}
+

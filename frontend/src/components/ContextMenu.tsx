@@ -36,8 +36,9 @@ export function ContextMenu({ buildItems, onSelect, children, className, style, 
     if (!open) return;
     const close = () => setOpen(false);
     const onScroll = (e: Event) => {
-      // Scrolling inside the menu itself (long submenus) must not close it.
-      if (e.target instanceof Element && e.target.closest('.ant-dropdown')) return;
+      // Scrolling inside the menu itself must not close it. Submenu popups (e.g. the scrollable
+      // Assignees/Reviewers lists) render in their own portal, outside .ant-dropdown.
+      if (e.target instanceof Element && e.target.closest('.ant-dropdown, .ant-dropdown-menu-submenu-popup')) return;
       close();
     };
     const onKey = (e: KeyboardEvent) => {

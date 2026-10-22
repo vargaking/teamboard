@@ -62,18 +62,19 @@ export function useCardActions(boardId: number) {
     [message, moveCardTo],
   );
 
-  const toggleMe = useCallback(
-    (card: Card, role: 'assignee' | 'reviewer') => {
+  /** Toggle one person in the card's assignees or reviewers (PATCH replaces the full set). */
+  const togglePerson = useCallback(
+    (card: Card, role: 'assignee' | 'reviewer', userId: number) => {
       const people = role === 'assignee' ? card.assignees : card.reviewers;
       const ids = people.map((p) => p.id);
-      const next = ids.includes(user.id) ? ids.filter((id) => id !== user.id) : [...ids, user.id];
+      const next = ids.includes(userId) ? ids.filter((id) => id !== userId) : [...ids, userId];
       patch(
         card,
         role === 'assignee' ? { assignee_ids: next } : { reviewer_ids: next },
         role === 'assignee' ? 'Could not update assignees' : 'Could not update reviewers',
       );
     },
-    [patch, user.id],
+    [patch],
   );
 
   const setDue = useCallback(
@@ -116,5 +117,5 @@ export function useCardActions(boardId: number) {
     [deleteCard.mutateAsync, message, modal],
   );
 
-  return { moveToColumnEnd, toggleMe, setDue, toggleLabel, copyLink, confirmDelete, userId: user.id };
+  return { moveToColumnEnd, togglePerson, setDue, toggleLabel, copyLink, confirmDelete, userId: user.id };
 }
