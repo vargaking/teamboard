@@ -69,10 +69,11 @@ jobs:
     steps:
       - name: Trigger Render deploy
         env:
-          HOOK: ${{ secrets.RENDER_DEPLOY_HOOK }}
+          # Accept the hook as a repository secret (preferred) or an Actions variable.
+          HOOK: ${{ secrets.RENDER_DEPLOY_HOOK || vars.RENDER_DEPLOY_HOOK }}
         run: |
           if [ -z "$HOOK" ]; then
-            echo "::warning::RENDER_DEPLOY_HOOK secret is not set; skipping Render deploy"
+            echo "::warning::RENDER_DEPLOY_HOOK is not set (Settings -> Secrets and variables -> Actions); skipping Render deploy"
             exit 0
           fi
           curl -fsS -X POST "$HOOK" && echo "Render deploy triggered"
