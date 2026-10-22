@@ -154,7 +154,7 @@ export const IntroScene: React.FC<{ stillFile: string; stillFrame: number }> = (
           <div style={{ color: 'white', fontSize: 132, fontWeight: 800, letterSpacing: -3 }}>TeamBoard</div>
         </div>
         <div style={{ marginTop: 26, color: C.mist, fontSize: 50, fontWeight: 600, opacity: sub, transform: `translateY(${(1 - sub) * 20}px)` }}>
-          The kanban board for Team Lucrum
+          The kanban board for our SEP team
         </div>
         <div style={{ marginTop: 10, color: 'rgba(255,255,255,0.55)', fontSize: 36, fontWeight: 500, opacity: sub }}>SEP project · TU Eindhoven</div>
         <div style={{ display: 'flex', gap: 16, marginTop: 46 }}>
@@ -217,7 +217,7 @@ export const ClaudeChat: React.FC = () => {
   const { fps } = useVideoConfig();
   const t = frame / fps;
   const pop = (at: number) => spring({ frame: frame - Math.round(at * fps), fps, config: { damping: 15 } });
-  const ask = 'Add a card "Created by Claude" to To do on the Lucrum board.';
+  const ask = 'Add a card "Created by Claude" to To do on the SEP board.';
   const typed = ask.slice(0, Math.floor(interpolate(t, [0.2, 1.6], [0, ask.length], { extrapolateLeft: 'clamp', extrapolateRight: 'clamp' })));
   const tools = ['list_boards', 'get_board', 'create_card'];
   const caps = ['Read boards & cards', 'Create & update cards', 'Move cards', 'Add comments'];

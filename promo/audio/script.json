@@ -13,7 +13,7 @@
       "id": "intro",
       "minSeconds": 8,
       "lines": [
-        { "text": "This is TeamBoard: the kanban board built for Lucrum, our SEP team.", "say": "This is Team Board: the kanban board built for Lucrum, our S.E.P. team." },
+        { "text": "This is TeamBoard: the kanban board built for our SEP team.", "say": "This is Team Board: the kanban board built for our S.E.P. team." },
         { "text": "Think Trello, but ours." }
       ]
     },
@@ -21,7 +21,7 @@
       "id": "boards",
       "minSeconds": 18,
       "lines": [
-        { "text": "Every workstream gets its own board." },
+        { "text": "You can keep several boards, but one is all you need to start." },
         { "text": "Columns hold cards, with coloured labels, due dates and the avatars of whoever is on it." },
         { "text": "Finished something? Just drag the card to the next column." }
       ]

@@ -5,7 +5,8 @@ The Kokoro ONNX weights and voice style vectors are taken from the npm package `
 sha256 of onnx-community/Kokoro-82M-v1.0-ONNX `model_quantized.onnx`.
 
   python3 -m venv .work/ttsvenv && .work/ttsvenv/bin/pip install kokoro-onnx soundfile
-  .work/ttsvenv/bin/python audio/make_voice.py
+  .work/ttsvenv/bin/python audio/make_voice.py                    # all lines
+  .work/ttsvenv/bin/python audio/make_voice.py intro_0 boards_0   # only these lines, keep the rest
 
 Writes public/audio/voice/<scene>_<n>.wav and src/data/voice.json (durations used by the Remotion timeline).
 """
@@ -17,6 +18,7 @@ import hashlib
 import json
 import os
 import subprocess
+import sys
 import tarfile
 
 import numpy as np
@@ -77,6 +79,12 @@ def level(samples: np.ndarray, target_rms_db: float = -19.0) -> np.ndarray:
 
 def main():
     script = json.load(open(os.path.join(HERE, "script.json")))
+    only = set(sys.argv[1:])
+    previous = {}
+    if only and os.path.exists(DATA):
+        for sc in json.load(open(DATA))["scenes"]:
+            for i, l in enumerate(sc["lines"]):
+                previous[f"{sc['id']}_{i}"] = l
     model, voices = fetch_model()
     tts = Kokoro(model, voices)
     os.makedirs(OUT, exist_ok=True)
@@ -85,6 +93,10 @@ def main():
     for scene in script["scenes"]:
         lines = []
         for i, line in enumerate(scene["lines"]):
+            key = f"{scene['id']}_{i}"
+            if only and key not in only and key in previous:
+                lines.append({**previous[key], "text": line["text"]})
+                continue
             samples, sr = tts.create(line.get("say", line["text"]), voice=script["voice"], speed=script["speed"], lang="en-us")
             samples = level(trim(np.asarray(samples, dtype=np.float32), sr))
             name = f"{scene['id']}_{i}.wav"

@@ -18,8 +18,8 @@
       "lines": [
         {
           "file": "audio/voice/intro_0.wav",
-          "seconds": 4.413,
-          "text": "This is TeamBoard: the kanban board built for Lucrum, our SEP team."
+          "seconds": 3.991,
+          "text": "This is TeamBoard: the kanban board built for our SEP team."
         },
         {
           "file": "audio/voice/intro_1.wav",
@@ -34,8 +34,8 @@
       "lines": [
         {
           "file": "audio/voice/boards_0.wav",
-          "seconds": 1.9,
-          "text": "Every workstream gets its own board."
+          "seconds": 3.263,
+          "text": "You can keep several boards, but one is all you need to start."
         },
         {
           "file": "audio/voice/boards_1.wav",
