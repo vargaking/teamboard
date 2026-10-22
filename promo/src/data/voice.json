@@ -87,6 +87,17 @@
       ]
     },
     {
+      "id": "reviews",
+      "minSeconds": 13,
+      "lines": [
+        {
+          "file": "audio/voice/reviews_0.wav",
+          "seconds": 5.526,
+          "text": "Review counts keep score for you: every reviewer's open and finished reviews, updated live."
+        }
+      ]
+    },
+    {
       "id": "filters",
       "minSeconds": 14,
       "lines": [
@@ -113,13 +124,13 @@
       "lines": [
         {
           "file": "audio/voice/claude_0.wav",
-          "seconds": 1.963,
-          "text": "TeamBoard also works with Claude."
+          "seconds": 7.763,
+          "text": "TeamBoard works with Claude and ChatGPT: it's an MCP server, so your assistant can read and update the board as you."
         },
         {
           "file": "audio/voice/claude_1.wav",
-          "seconds": 6.041,
-          "text": "Open Connect to Claude from your avatar menu and add the connector to claude.ai or Claude Code."
+          "seconds": 4.915,
+          "text": "Open Connect an AI assistant from your avatar menu and follow the steps for your app."
         },
         {
           "file": "audio/voice/claude_2.wav",

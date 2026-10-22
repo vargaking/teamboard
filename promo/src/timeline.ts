@@ -6,7 +6,7 @@ import { FPS } from './theme';
  * and by the footage it shows. `lineStarts` pins a line to a moment in the scene (seconds) so that what is said
  * matches what is on screen; a line never starts before the previous one has finished plus GAP.
  */
-export type SceneId = 'hook' | 'intro' | 'boards' | 'live' | 'details' | 'filters' | 'claude' | 'import' | 'login';
+export type SceneId = 'hook' | 'intro' | 'boards' | 'live' | 'details' | 'reviews' | 'filters' | 'claude' | 'import' | 'login';
 
 type SceneConfig = { id: SceneId; title?: string; seconds: number; lineStarts: number[] };
 
@@ -16,8 +16,9 @@ export const SCENE_CONFIG: SceneConfig[] = [
   { id: 'boards', title: 'Boards & cards', seconds: 15.0, lineStarts: [0.4, 4.3, 9.4] },
   { id: 'live', title: 'Live updates', seconds: 10.6, lineStarts: [0.4, 2.6, 7.0] },
   { id: 'details', title: 'Card details', seconds: 11.7, lineStarts: [0.6, 5.3] },
+  { id: 'reviews', title: 'Review counts', seconds: 13.9, lineStarts: [2.4] },
   { id: 'filters', title: 'Filters, menus & dark mode', seconds: 15.1, lineStarts: [0.4, 7.7, 12.0] },
-  { id: 'claude', title: 'Claude connector', seconds: 19.6, lineStarts: [0.4, 2.8, 10.2, 15.2] },
+  { id: 'claude', title: 'AI connector: Claude or ChatGPT', seconds: 19.6, lineStarts: [0.4, 2.8, 10.2, 15.2] },
   { id: 'import', title: 'Trello import & team', seconds: 13.6, lineStarts: [0.5, 7.6] },
   { id: 'login', title: 'Get started', seconds: 16.0, lineStarts: [0.5, 5.2, 12.3] },
 ];

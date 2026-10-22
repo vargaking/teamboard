@@ -50,6 +50,8 @@ DPR = 2560 / 1440
 # Side-by-side "live updates" panes.
 LIVE_VIEW = {"width": 1180, "height": 820}
 LIVE_DPR = 1.6
+# Review counts clip (sidebar open)
+REVIEW_VIEW = {"width": 1600, "height": 900}
 
 
 # ---------------------------------------------------------------------------------------------------------------------
@@ -687,7 +689,8 @@ def clip_login(browser, ses: Session):
 
 def clip_reviews(browser, ses: Session):
     """Review counts sidebar: add a reviewer in the card dialog, finish a reviewed card, filter by a reviewer."""
-    ctx = make_context(browser, "daniel", review_panel="open")
+    # A bit wider than the other clips: with the 260 px sidebar the four columns still fit without auto-scrolling.
+    ctx = make_context(browser, "daniel", review_panel="open", view=REVIEW_VIEW, dpr=2560 / REVIEW_VIEW["width"])
     page = ctx.new_page()
     page.goto(BASE + "/boards/1")
     settle(page)
@@ -727,7 +730,7 @@ def clip_reviews(browser, ses: Session):
     rec.glide("main", *rec.center("main", src, dx=-30), 0.8, arc=0.2)
     m["grab"] = rec.count
     first = column(page, "Done").locator(".card-tile").first.bounding_box()
-    rec.drag("main", first["x"] + first["width"] / 2 - 40, first["y"] + 25, seconds=1.4, arc=0.1)
+    rec.drag("main", first["x"] + 70, first["y"] + 25, seconds=1.4, arc=0.05)
     m["drop"] = rec.count
     rec.hold(1.4)
     b["moved"] = box(card(page, "Sharpe ratio"))
@@ -739,7 +742,7 @@ def clip_reviews(browser, ses: Session):
     rec.glide("main", 1100, 640, 0.6)
     rec.hold(1.6)
     b["panelEnd"] = box(panel)
-    ses.finish("reviews", rec, m, {"main": "reviews"}, b)
+    ses.finish("reviews", rec, m, {"main": "reviews"}, b, REVIEW_VIEW)
     ctx.close()
 
 

@@ -4,7 +4,7 @@ import { Background, Captions, ProgressBar, SceneChip } from './components/UI';
 import { ALL_LINES, SCENES, SceneId, TOTAL_SECONDS } from './timeline';
 import { FPS } from './theme';
 import { HookScene, IntroScene } from './scenes/Graphics';
-import { BoardsScene, ClaudeScene, DetailsScene, FiltersScene, ImportScene, LiveScene, LoginScene } from './scenes/Features';
+import { BoardsScene, ClaudeScene, DetailsScene, FiltersScene, ImportScene, LiveScene, LoginScene, ReviewsScene } from './scenes/Features';
 import { clip } from './components/Footage';
 
 const FADE = 8; // frames of crossfade between scenes
@@ -15,6 +15,7 @@ const SCENE_COMPONENTS: Record<SceneId, React.FC> = {
   boards: BoardsScene,
   live: LiveScene,
   details: DetailsScene,
+  reviews: ReviewsScene,
   filters: FiltersScene,
   claude: ClaudeScene,
   import: ImportScene,

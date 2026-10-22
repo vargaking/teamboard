@@ -32,7 +32,7 @@ export function AppLayout() {
       ),
     },
     { type: 'divider' },
-    { key: 'connect', icon: <ApiOutlined />, label: 'Connect to Claude' },
+    { key: 'connect', icon: <ApiOutlined />, label: 'Connect an AI assistant' },
     { key: 'password', icon: <KeyOutlined />, label: 'Change password' },
     { key: 'logout', icon: <LogoutOutlined />, label: 'Log out', danger: true },
   ];

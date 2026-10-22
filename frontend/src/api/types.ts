@@ -158,7 +158,7 @@ export type BoardChannelMessage = BoardUpdatedMessage | BoardDeletedMessage;
 export type BoardsChannelMessage = BoardsChangedMessage | BoardDeletedMessage;
 export type LiveMessage = BoardUpdatedMessage | BoardDeletedMessage | BoardsChangedMessage;
 
-// ---- MCP / Connect to Claude ----
+// ---- MCP / Connect an AI assistant ----
 
 export type McpInfo = { mcp_url: string; oauth_enabled: boolean; public_url: string };
 

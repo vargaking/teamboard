@@ -178,6 +178,49 @@ export const DetailsScene: React.FC = () => {
 };
 
 // ---------------------------------------------------------------------------------------------------------------
+export const ReviewsScene: React.FC = () => {
+  const segments: Segment[] = [{ clip: 'reviews', at: 0 }];
+  const at = (k: string) => tm('reviews', k, 0);
+  const panel = boxOf('reviews', 'panel');
+  const rowDaniel = boxOf('reviews', 'rowDaniel');
+  const footer = boxOf('reviews', 'footer');
+  const moved = boxOf('reviews', 'moved');
+  const top: Box = [panel[0], panel[1], panel[2], rowDaniel[1] - panel[1] + 3 * rowDaniel[3] + 6]; // header + first three rows
+  const cams: Cam[] = [
+    { t: 0, s: 1 },
+    { t: 1.0, s: 1.25, x: 560, y: 380 },
+    { t: at('open') - 0.2, s: 1.25, x: 560, y: 380 },
+    { t: at('open') + 0.6, s: 1 },
+    { t: at('closed') + 0.2, s: 1 },
+  ];
+  const MX = 1200;
+  const MW = 470;
+  const magTop = { y: 250, h: (top[3] / top[2]) * MW };
+  const footY = magTop.y + magTop.h + 70;
+  return (
+    <AbsoluteFill>
+      <BrowserWindow x={WIN.x} y={WIN.y} width={WIN.w} contentHeight={winH}>
+        <Footage
+          segments={segments}
+          width={WIN.w}
+          cams={cams}
+          highlights={[
+            { box: panel, from: 0.6, to: at('open') - 0.2, color: C.blue },
+            { box: moved, from: at('drop') + 0.2, to: at('filter') - 0.2, color: C.green },
+            { box: rowDaniel, from: at('filter') - 0.1, to: 13.9, color: C.purple },
+          ]}
+        />
+      </BrowserWindow>
+      <Magnifier segments={segments} box={top} x={MX} y={magTop.y} width={MW} from={at('closed') + 0.3} to={13.6} label="Live per reviewer" />
+      <Magnifier segments={segments} box={pad(footer, 0, 2)} x={MX} y={footY} width={MW} from={at('drop') + 0.3} to={13.6} accent={C.green} />
+      <Callout x={1680} y={47} align="right" text="Add a reviewer in the card" from={at('open')} to={at('closed')} color={C.purple} />
+      <Callout x={1680} y={47} align="right" text="Card done → count ticks over live" from={at('drop') - 0.2} to={at('filter') - 0.5} color={C.green} />
+      <Callout x={1680} y={47} align="right" text="Click a row: filter by reviewer" from={at('filter')} to={13.9} />
+    </AbsoluteFill>
+  );
+};
+
+// ---------------------------------------------------------------------------------------------------------------
 export const FiltersScene: React.FC = () => {
   const aFrom = 40;
   const aTo = 300;

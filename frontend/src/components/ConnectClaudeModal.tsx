@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, type ReactNode } from 'react';
 import {
   Alert,
   App,
@@ -42,6 +42,61 @@ function Timestamp({ value }: { value: string | null }) {
   );
 }
 
+/** OAuth (claude.ai / ChatGPT) needs HTTPS; same warning on both OAuth tabs. */
+function OAuthUnavailableAlert() {
+  return (
+    <Alert
+      type="warning"
+      showIcon
+      style={{ marginBottom: 16 }}
+      message="OAuth needs the app to be served over HTTPS (PUBLIC_URL). Use a personal token with Claude Code or another MCP client instead."
+    />
+  );
+}
+
+function StepList({ steps }: { steps: ReactNode[] }) {
+  return (
+    <ol className="connect-steps">
+      {steps.map((step, i) => (
+        <li key={i}>
+          <span className="connect-step-number">{i + 1}</span>
+          <div className="connect-step-body">{step}</div>
+        </li>
+      ))}
+    </ol>
+  );
+}
+
+function ChatGptTab({ info }: { info: McpInfo }) {
+  const steps = [
+    <>
+      In ChatGPT, open <b>Settings</b> → <b>Apps &amp; Connectors</b> (needs a paid plan).
+    </>,
+    <>
+      Enable <b>Developer mode</b> (under <b>Advanced settings</b>).
+    </>,
+    <>
+      Click <b>Create</b> and paste the TeamBoard MCP URL:
+      <CopyField value={info.mcp_url} label="MCP URL" />
+    </>,
+    <>
+      Click <b>Create</b>, then on the consent page log in with your <b>TeamBoard account</b> and click <b>Allow</b>.
+    </>,
+    <>
+      Done. In a chat, enable the <b>TeamBoard</b> connector from the tools menu.
+    </>,
+  ];
+  return (
+    <div>
+      {!info.oauth_enabled && <OAuthUnavailableAlert />}
+      <StepList steps={steps} />
+      <Typography.Paragraph type="secondary" style={{ fontSize: 12, marginTop: 8, marginBottom: 0 }}>
+        ChatGPT connects with OAuth only; personal tokens are for the API/Codex.
+      </Typography.Paragraph>
+    </div>
+  );
+}
+
 function ClaudeAiTab({ info }: { info: McpInfo }) {
   const steps = [
     <>
@@ -64,22 +119,8 @@ function ClaudeAiTab({ info }: { info: McpInfo }) {
   ];
   return (
     <div>
-      {!info.oauth_enabled && (
-        <Alert
-          type="warning"
-          showIcon
-          style={{ marginBottom: 16 }}
-          message="OAuth needs the app to be served over HTTPS (PUBLIC_URL). Use a personal token with Claude Code instead."
-        />
-      )}
-      <ol className="connect-steps">
-        {steps.map((step, i) => (
-          <li key={i}>
-            <span className="connect-step-number">{i + 1}</span>
-            <div className="connect-step-body">{step}</div>
-          </li>
-        ))}
-      </ol>
+      {!info.oauth_enabled && <OAuthUnavailableAlert />}
+      <StepList steps={steps} />
     </div>
   );
 }
@@ -244,6 +285,7 @@ export function ConnectClaudeModal({ open, onClose }: Props) {
         defaultActiveKey={info.data.oauth_enabled ? 'claude-ai' : 'claude-code'}
         items={[
           { key: 'claude-ai', label: 'claude.ai', children: <ClaudeAiTab info={info.data} /> },
+          { key: 'chatgpt', label: 'ChatGPT', children: <ChatGptTab info={info.data} /> },
           {
             key: 'claude-code',
             label: 'Claude Code / other clients',
@@ -259,7 +301,7 @@ export function ConnectClaudeModal({ open, onClose }: Props) {
       title={
         <Space>
           <ApiOutlined />
-          Connect to Claude
+          Connect an AI assistant
         </Space>
       }
       open={open}
@@ -270,7 +312,8 @@ export function ConnectClaudeModal({ open, onClose }: Props) {
       className="connect-claude-modal"
     >
       <Typography.Paragraph type="secondary">
-        TeamBoard is an MCP server: connect Claude to read and update your boards from claude.ai or Claude Code.
+        TeamBoard is an MCP server: connect Claude, ChatGPT or any MCP client to read and update your boards — as you,
+        with your permissions.
       </Typography.Paragraph>
       {body}
     </Modal>

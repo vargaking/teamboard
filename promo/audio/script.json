@@ -6,77 +6,139 @@
       "id": "hook",
       "minSeconds": 5,
       "lines": [
-        { "text": "Twelve people. One project. Every task in one place." }
+        {
+          "text": "Twelve people. One project. Every task in one place."
+        }
       ]
     },
     {
       "id": "intro",
       "minSeconds": 8,
       "lines": [
-        { "text": "This is TeamBoard: the kanban board built for our SEP team.", "say": "This is Team Board: the kanban board built for our S.E.P. team." },
-        { "text": "Think Trello, but ours." }
+        {
+          "text": "This is TeamBoard: the kanban board built for our SEP team.",
+          "say": "This is Team Board: the kanban board built for our S.E.P. team."
+        },
+        {
+          "text": "Think Trello, but ours."
+        }
       ]
     },
     {
       "id": "boards",
       "minSeconds": 18,
       "lines": [
-        { "text": "You can keep several boards, but one is all you need to start." },
-        { "text": "Columns hold cards, with coloured labels, due dates and the avatars of whoever is on it." },
-        { "text": "Finished something? Just drag the card to the next column." }
+        {
+          "text": "You can keep several boards, but one is all you need to start."
+        },
+        {
+          "text": "Columns hold cards, with coloured labels, due dates and the avatars of whoever is on it."
+        },
+        {
+          "text": "Finished something? Just drag the card to the next column."
+        }
       ]
     },
     {
       "id": "live",
       "minSeconds": 13,
       "lines": [
-        { "text": "And everyone sees it instantly." },
-        { "text": "When Miki moves a card, it moves on your screen too. No refresh.", "say": "When Mickey moves a card, it moves on your screen too. No refresh." },
-        { "text": "The green Live dot means you're in sync." }
+        {
+          "text": "And everyone sees it instantly."
+        },
+        {
+          "text": "When Miki moves a card, it moves on your screen too. No refresh.",
+          "say": "When Mickey moves a card, it moves on your screen too. No refresh."
+        },
+        {
+          "text": "The green Live dot means you're in sync."
+        }
       ]
     },
     {
       "id": "details",
       "minSeconds": 13,
       "lines": [
-        { "text": "Open a card for the full picture: description, due date and assignees." },
-        { "text": "Reviewers get the eye icon, labels keep things sorted, and comments hold the discussion." }
+        {
+          "text": "Open a card for the full picture: description, due date and assignees."
+        },
+        {
+          "text": "Reviewers get the eye icon, labels keep things sorted, and comments hold the discussion."
+        }
+      ]
+    },
+    {
+      "id": "reviews",
+      "minSeconds": 13,
+      "lines": [
+        {
+          "text": "Review counts keep score for you: every reviewer's open and finished reviews, updated live."
+        }
       ]
     },
     {
       "id": "filters",
       "minSeconds": 14,
       "lines": [
-        { "text": "Busy board? Filter by assignee or reviewer, or just search." },
-        { "text": "Right-click any card or column for quick actions." },
-        { "text": "And yes, there's a dark mode." }
+        {
+          "text": "Busy board? Filter by assignee or reviewer, or just search."
+        },
+        {
+          "text": "Right-click any card or column for quick actions."
+        },
+        {
+          "text": "And yes, there's a dark mode."
+        }
       ]
     },
     {
       "id": "claude",
       "minSeconds": 19,
       "lines": [
-        { "text": "TeamBoard also works with Claude.", "say": "Team Board also works with Claude." },
-        { "text": "Open Connect to Claude from your avatar menu and add the connector to claude.ai or Claude Code.", "say": "Open Connect to Claude from your avatar menu, and add the connector to Claude dot A I, or Claude Code." },
-        { "text": "Claude can read your boards, create cards and move them, as you, with your permissions." },
-        { "text": "Ask for a card, and it shows up live." }
+        {
+          "text": "TeamBoard works with Claude and ChatGPT: it's an MCP server, so your assistant can read and update the board as you.",
+          "say": "Team Board works with Claude and ChatGPT: it's an M C P server, so your assistant can read and update the board as you."
+        },
+        {
+          "text": "Open Connect an AI assistant from your avatar menu and follow the steps for your app.",
+          "say": "Open Connect an A I assistant from your avatar menu, and follow the steps for your app."
+        },
+        {
+          "text": "Claude can read your boards, create cards and move them, as you, with your permissions."
+        },
+        {
+          "text": "Ask for a card, and it shows up live."
+        }
       ]
     },
     {
       "id": "import",
       "minSeconds": 14,
       "lines": [
-        { "text": "Coming from Trello? Import a board from its JSON export: lists, cards, labels and comments come along.", "say": "Coming from Trello? Import a board from its Jason export. Lists, cards, labels and comments come along." },
-        { "text": "Admins run the Team page: add people directly, or send an invite link." }
+        {
+          "text": "Coming from Trello? Import a board from its JSON export: lists, cards, labels and comments come along.",
+          "say": "Coming from Trello? Import a board from its Jason export. Lists, cards, labels and comments come along."
+        },
+        {
+          "text": "Admins run the Team page: add people directly, or send an invite link."
+        }
       ]
     },
     {
       "id": "login",
       "minSeconds": 12,
       "lines": [
-        { "text": "To get started, go to teamboard-sep.vercel.app.", "say": "To get started, go to team board dash S E P dot vercel dot app." },
-        { "text": "Log in with your first name @teamboard.local, then change your password from the avatar menu.", "say": "Log in with your first name, at team board dot local. Then change your password from the avatar menu." },
-        { "text": "See you on the board!" }
+        {
+          "text": "To get started, go to teamboard-sep.vercel.app.",
+          "say": "To get started, go to team board dash S E P dot vercel dot app."
+        },
+        {
+          "text": "Log in with your first name @teamboard.local, then change your password from the avatar menu.",
+          "say": "Log in with your first name, at team board dot local. Then change your password from the avatar menu."
+        },
+        {
+          "text": "See you on the board!"
+        }
       ]
     }
   ]

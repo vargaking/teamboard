@@ -662,7 +662,7 @@ body {
   overflow-wrap: anywhere; /* wrap at spaces first; only split long tokens/URLs when needed */
 }
 
-/* ---------- connect to Claude ---------- */
+/* ---------- connect an AI assistant (MCP) ---------- */
 
 .connect-steps {
   list-style: none;
