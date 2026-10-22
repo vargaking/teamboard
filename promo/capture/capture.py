@@ -119,9 +119,11 @@ def login_token(local: str) -> str:
     return json.loads(urllib.request.urlopen(req).read())["access_token"]
 
 
-def make_context(browser, user: str | None, theme: str = "light", view=VIEW, dpr=DPR):
+def make_context(browser, user: str | None, theme: str = "light", view=VIEW, dpr=DPR, review_panel: str = "collapsed"):
     ctx = browser.new_context(viewport=view, device_scale_factor=dpr, locale="en-GB", timezone_id="Europe/Amsterdam")
+    # The Review counts sidebar (board page) opens by default on wide screens; only its own clip shows it.
     init = f"localStorage.setItem('teamboard_theme', {json.dumps(theme)});"
+    init += f"localStorage.setItem('teamboard_review_panel', {json.dumps(review_panel)});"
     if user:
         init += f"localStorage.setItem('teamboard_token', {json.dumps(login_token(user))});"
     # only on first load of the context, so later theme toggles are not reverted by navigations
@@ -683,7 +685,65 @@ def clip_login(browser, ses: Session):
     ctx.close()
 
 
-ORDER = ["boards", "drag", "live", "details", "filters", "context", "claude", "dark", "trello", "team", "login"]
+def clip_reviews(browser, ses: Session):
+    """Review counts sidebar: add a reviewer in the card dialog, finish a reviewed card, filter by a reviewer."""
+    ctx = make_context(browser, "daniel", review_panel="open")
+    page = ctx.new_page()
+    page.goto(BASE + "/boards/1")
+    settle(page)
+    rec = Rec({"main": page}, frames_dir("reviews"))
+    m = {}
+    panel = page.locator(".review-panel")
+    row = lambda name: panel.locator(".review-row", has_text=name).first  # noqa: E731
+    b = {"panel": box(panel), "rowDaniel": box(row("Dániel")), "footer": box(panel.locator(".review-panel-footer"))}
+    rec.set_mouse("main", 900, 700)
+    rec.hold(0.8)
+    # 1. add Dániel as reviewer of "Strategy upload API" in the card dialog
+    target = card(page, "Strategy upload API")
+    rec.glide("main", *rec.center("main", target, dx=-30), 0.8, arc=0.2)
+    m["open"] = rec.count
+    rec.click("main")
+    page.wait_for_selector(".ant-modal-content")
+    rec.hold(0.5)
+    sel = page.locator(".ant-modal-content .ant-select", has=page.locator("[aria-label='Reviewers']")).first
+    rec.glide("main", *rec.center("main", sel), 0.6)
+    rec.click("main")
+    page.wait_for_selector(".ant-select-dropdown:visible")
+    rec.hold(0.3)
+    opt = page.locator(".ant-select-dropdown:visible .ant-select-item-option", has_text="Dániel").first
+    rec.glide("main", *rec.center("main", opt), 0.5)
+    m["pick"] = rec.count
+    rec.click("main")
+    rec.hold(0.6)
+    page.keyboard.press("Escape")
+    rec.hold(0.2)
+    page.keyboard.press("Escape")
+    page.wait_for_selector(".ant-modal-content", state="detached", timeout=5000)
+    m["closed"] = rec.count
+    rec.hold(1.0)
+    b["rowDanielAfterAdd"] = box(row("Dániel"))
+    # 2. drag a card Dániel reviews ("Sharpe ratio") from Review to Done: his count moves to "done" live
+    src = card(page, "Sharpe ratio")
+    rec.glide("main", *rec.center("main", src, dx=-30), 0.8, arc=0.2)
+    m["grab"] = rec.count
+    first = column(page, "Done").locator(".card-tile").first.bounding_box()
+    rec.drag("main", first["x"] + first["width"] / 2 - 40, first["y"] + 25, seconds=1.4, arc=0.1)
+    m["drop"] = rec.count
+    rec.hold(1.4)
+    b["moved"] = box(card(page, "Sharpe ratio"))
+    # 3. click Dániel's row: the board filters to the cards he reviews
+    rec.glide("main", *rec.center("main", row("Dániel")), 0.8)
+    m["filter"] = rec.count
+    rec.click("main")
+    rec.hold(0.6)
+    rec.glide("main", 1100, 640, 0.6)
+    rec.hold(1.6)
+    b["panelEnd"] = box(panel)
+    ses.finish("reviews", rec, m, {"main": "reviews"}, b)
+    ctx.close()
+
+
+ORDER = ["boards", "drag", "live", "details", "reviews", "filters", "context", "claude", "dark", "trello", "team", "login"]
 CLIP_FNS = {name: globals()[f"clip_{name}"] for name in ORDER}
 
 
@@ -691,9 +751,15 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--only", nargs="*", default=None)
     ap.add_argument("--no-build", action="store_true")
+    ap.add_argument("--dist", help="use this already-built frontend dist/ instead of building ../frontend")
     args = ap.parse_args()
     os.makedirs(WORK, exist_ok=True)
-    dist = os.path.join(WORK, "dist") if args.no_build and os.path.exists(os.path.join(WORK, "dist")) else build_frontend()
+    if args.dist:
+        dist = os.path.abspath(args.dist)
+    elif args.no_build and os.path.exists(os.path.join(WORK, "dist")):
+        dist = os.path.join(WORK, "dist")
+    else:
+        dist = build_frontend()
     backend = start_backend(dist)
     try:
         subprocess.run([sys.executable, os.path.join(HERE, "seed_demo.py"), BASE], check=True)
