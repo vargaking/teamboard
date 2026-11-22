@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { App, Button, Input, Select, Space, Typography } from 'antd';
+import { App, Button, Dropdown, Input, Select, Space, Typography } from 'antd';
 import { DeleteOutlined, MoreOutlined, SearchOutlined, TagsOutlined, TeamOutlined } from '@ant-design/icons';
 import type { BoardDetail } from '../../api/types';
 import { getErrorMessage } from '../../api/client';
@@ -9,7 +9,8 @@ import { useDeleteBoard, useUpdateBoard } from '../../hooks/useBoards';
 import type { LiveStatus } from '../../hooks/useLiveSocket';
 import { LiveIndicator } from '../LiveIndicator';
 import { UserAvatar, UserAvatarGroup } from '../UserAvatar';
-import { DangerMenu } from './DangerMenu';
+import { BoardCsvImportModal } from './BoardCsvImportModal';
+import { exportBoardCsv } from '../../utils/boardCsv';
 import type { ReviewCount } from '../../utils/board';
 import { EditableText } from './EditableText';
 import { LabelsModal } from './LabelsModal';
@@ -94,11 +95,13 @@ export function BoardHeader({
 }: Props) {
   const user = useCurrentUser();
   const navigate = useNavigate();
-  const { message } = App.useApp();
+  const { message, modal } = App.useApp();
   const updateBoard = useUpdateBoard(board.id);
   const deleteBoard = useDeleteBoard();
   const [membersOpen, setMembersOpen] = useState(false);
   const [labelsOpen, setLabelsOpen] = useState(false);
+
+  const [importOpen, setImportOpen] = useState(false);
 
   const canDelete = board.owner_id === user.id || user.is_admin;
 
@@ -152,31 +155,37 @@ export function BoardHeader({
           <Button icon={<TagsOutlined />} onClick={() => setLabelsOpen(true)}>
             Labels
           </Button>
-          {canDelete && (
-            <DangerMenu
-              ariaLabel="Board menu"
-              trigger={<Button icon={<MoreOutlined />} aria-label="Board menu" />}
-              actions={[
-                {
-                  key: 'delete',
-                  label: 'Delete board',
-                  icon: <DeleteOutlined />,
-                  confirmTitle: `Delete board "${board.title}"?`,
-                  confirmDescription: 'All columns, cards and comments will be deleted.',
-                  onConfirm: () =>
-                    deleteBoard
-                      .mutateAsync(board.id)
-                      .then(() => {
-                        void message.success('Board deleted');
-                        navigate('/', { replace: true });
-                      })
-                      .catch((err: unknown) => {
-                        void message.error(getErrorMessage(err, 'Could not delete board'));
-                      }),
+          <Dropdown trigger={['click']} placement="bottomRight" menu={{ items: [
+            { key: 'import', label: 'Import CSV', onClick: () => setImportOpen(true) },
+            { key: 'export', label: 'Export CSV', onClick: () => {
+              const url = URL.createObjectURL(new Blob([exportBoardCsv(board)], { type: 'text/csv;charset=utf-8' }));
+              const link = document.createElement('a');
+              link.href = url;
+              link.download = (board.title.replace(/[<>:"/\\|?*]/g, '_').trim() || 'board') + '.csv';
+              link.click();
+              window.setTimeout(() => URL.revokeObjectURL(url), 1000);
+            } },
+            ...(canDelete ? [{
+              key: 'delete', label: 'Delete board', icon: <DeleteOutlined />, danger: true,
+              onClick: () => modal.confirm({
+                title: `Delete board "${board.title}"?`,
+                content: 'All columns, cards and comments will be deleted.',
+                okText: 'Delete', okButtonProps: { danger: true },
+                onOk: async () => {
+                  try {
+                    await deleteBoard.mutateAsync(board.id);
+                    void message.success('Board deleted');
+                    navigate('/', { replace: true });
+                  } catch (err) {
+                    void message.error(getErrorMessage(err, 'Could not delete board'));
+                    throw err;
+                  }
                 },
-              ]}
-            />
-          )}
+              }),
+            }] : []),
+          ] }}>
+            <Button icon={<MoreOutlined />} aria-label="Board menu" />
+          </Dropdown>
         </Space>
       </div>
       <div className="board-filters">
@@ -209,6 +218,7 @@ export function BoardHeader({
           style={{ width: 240 }}
         />
       </div>
+      {importOpen && <BoardCsvImportModal key={board.id} board={board} onClose={() => setImportOpen(false)} />}
       <MembersModal board={board} open={membersOpen} onClose={() => setMembersOpen(false)} />
       <LabelsModal board={board} open={labelsOpen} onClose={() => setLabelsOpen(false)} />
     </div>
