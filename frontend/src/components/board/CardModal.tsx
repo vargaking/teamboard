@@ -22,6 +22,7 @@ import { getErrorMessage } from '../../api/client';
 import { useCurrentUser } from '../../auth/AuthContext';
 import { useComments, useCreateComment, useDeleteCard, useDeleteComment, useUpdateCard } from '../../hooks/useCards';
 import { DATE_FORMAT, dayjs, getDueStatus, parseDueDate, parseTimestamp } from '../../utils/dates';
+import { missingCardFields } from '../../utils/cardRequirements';
 import { doneColumnIds } from '../../utils/board';
 import { LabelTag } from '../LabelTag';
 import { UserAvatar } from '../UserAvatar';
@@ -196,6 +197,10 @@ export function CardModal({ board, card, column, onClose }: Props) {
     save({ description }, 'Could not save description', () => setDescriptionDirty(false));
   };
 
+  const missing = missingCardFields({
+    title: card.title, description: card.description, assignee_ids: card.assignees.map(user => user.id),
+    reviewer_ids: card.reviewers.map(user => user.id), label_ids: card.labels.map(label => label.id),
+  }, board.labels);
   const dueStatus = card.due_date ? getDueStatus(card.due_date, doneColumnIds(board.columns).has(column.id)) : null;
 
   return (
@@ -224,6 +229,8 @@ export function CardModal({ board, card, column, onClose }: Props) {
       <Typography.Text type="secondary">
         in column <Typography.Text strong>{column.title}</Typography.Text>
       </Typography.Text>
+
+      {missing.length > 0 && <Alert type="warning" showIcon message={'Missing: ' + missing.join(', ')} />}
 
       <div className="card-modal-grid">
         <div>

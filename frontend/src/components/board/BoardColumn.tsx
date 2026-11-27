@@ -1,6 +1,6 @@
 import { memo, useRef } from 'react';
 import { Draggable, Droppable } from '@hello-pangea/dnd';
-import { App, Badge } from 'antd';
+import { App, Badge, Button } from 'antd';
 import type { MenuProps } from 'antd';
 import {
   ArrowLeftOutlined,
@@ -16,13 +16,11 @@ import { getErrorMessage } from '../../api/client';
 import { DND_TYPE_CARD } from '../../hooks/useBoardDnd';
 import { useBoardMoves } from '../../hooks/useBoardMoves';
 import { useDeleteColumn, useUpdateColumn } from '../../hooks/useBoards';
-import { useCreateCard } from '../../hooks/useCards';
 import { ContextMenu } from '../ContextMenu';
 import { useBoardView } from './BoardViewContext';
 import { CardTile } from './CardTile';
 import { DangerMenu } from './DangerMenu';
 import { EditableText, type EditableTextHandle } from './EditableText';
-import { InlineAddInput, type InlineAddInputHandle } from './InlineAddInput';
 
 type Props = {
   boardId: number;
@@ -33,6 +31,7 @@ type Props = {
   filtered: boolean;
   /** "Done" column per doneColumnIds(): no overdue highlighting, counts as reviewed. */
   inDone: boolean;
+  onAddCard: (columnId: number) => void;
   onOpenCard: (cardId: number) => void;
 };
 
@@ -60,15 +59,13 @@ export function planSortMoves(cards: Card[], sorted: Card[]): { cardId: number; 
   return moves;
 }
 
-function BoardColumnInner({ boardId, column, visibleCards, index, filtered, inDone, onOpenCard }: Props) {
+function BoardColumnInner({ boardId, column, visibleCards, index, filtered, inDone, onOpenCard, onAddCard }: Props) {
   const { message, modal } = App.useApp();
   const view = useBoardView();
   const updateColumn = useUpdateColumn(boardId);
   const deleteColumn = useDeleteColumn(boardId);
-  const createCard = useCreateCard(boardId);
   const { moveCardTo, moveColumn } = useBoardMoves(boardId);
   const titleRef = useRef<EditableTextHandle>(null);
-  const addCardRef = useRef<InlineAddInputHandle>(null);
 
   const cardCount = column.cards.length;
   const deleteDescription =
@@ -127,7 +124,7 @@ function BoardColumnInner({ boardId, column, visibleCards, index, filtered, inDo
         titleRef.current?.startEditing();
         return;
       case 'add':
-        addCardRef.current?.open();
+        onAddCard(column.id);
         return;
       case 'left':
         void moveColumn(columnIndex, columnIndex - 1);
@@ -211,19 +208,7 @@ function BoardColumnInner({ boardId, column, visibleCards, index, filtered, inDo
               )}
             </Droppable>
             <div className="column-footer">
-              <InlineAddInput
-                ref={addCardRef}
-                buttonLabel="Add card"
-                placeholder="Card title"
-                submitLabel="Add card"
-                loading={createCard.isPending}
-                onSubmit={(title) =>
-                  createCard.mutateAsync({ columnId: column.id, title }).catch((err: unknown) => {
-                    void message.error(getErrorMessage(err, 'Could not add card'));
-                    throw err;
-                  })
-                }
-              />
+              <Button type="text" block icon={<PlusOutlined />} onClick={() => onAddCard(column.id)}>Add card</Button>
             </div>
           </ContextMenu>
         </div>

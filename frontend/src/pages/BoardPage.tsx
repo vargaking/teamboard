@@ -12,6 +12,7 @@ import { BoardHeader, type PersonFilter } from '../components/board/BoardHeader'
 import { BoardViewContext, type BoardViewActions } from '../components/board/BoardViewContext';
 import { ContextMenu } from '../components/ContextMenu';
 import { queryKeys } from '../hooks/queryKeys';
+import { CreateCardModal } from '../components/board/CreateCardModal';
 import { CardModal } from '../components/board/CardModal';
 import { InlineAddInput, type InlineAddInputHandle } from '../components/board/InlineAddInput';
 import { COLUMN_DROPPABLE_ID, DND_TYPE_COLUMN, useBoardDnd } from '../hooks/useBoardDnd';
@@ -49,6 +50,8 @@ function useCardFilter(
 }
 
 function BoardView({ board }: { board: BoardDetail }) {
+  const [newCardColumnId, setNewCardColumnId] = useState<number | null>(null);
+  const newCardColumn = board.columns.find(column => column.id === newCardColumnId);
   const user = useCurrentUser();
   const { message } = App.useApp();
   const liveStatus = useBoardSocket(board.id);
@@ -170,6 +173,7 @@ function BoardView({ board }: { board: BoardDetail }) {
                   <div className="board-canvas" ref={provided.innerRef} {...provided.droppableProps}>
                     {board.columns.map((column, index) => (
                       <BoardColumn
+                        onAddCard={setNewCardColumnId}
                         key={column.id}
                         boardId={board.id}
                         column={column}
@@ -202,6 +206,7 @@ function BoardView({ board }: { board: BoardDetail }) {
             </DragDropContext>
           </ContextMenu>
         </div>
+        {newCardColumn && <CreateCardModal board={board} column={newCardColumn} onClose={() => setNewCardColumnId(null)} />}
         {openCard && (
           <CardModal
             key={openCard.card.id}

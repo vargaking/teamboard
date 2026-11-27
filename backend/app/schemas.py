@@ -90,11 +90,11 @@ class CardOut(ORMModel):
 
 class CardCreate(BaseModel):
     title: Annotated[NonEmptyStr, StringConstraints(max_length=300)]
-    description: str = ""
+    description: str
     due_date: date | None = None
-    assignee_ids: list[int] = Field(default_factory=list)
-    reviewer_ids: list[int] = Field(default_factory=list)
-    label_ids: list[int] = Field(default_factory=list)
+    assignee_ids: list[int] = Field(min_length=1)
+    reviewer_ids: list[int] = Field(min_length=2)
+    label_ids: list[int] = Field(min_length=1)
 
 
 class CardUpdate(BaseModel):

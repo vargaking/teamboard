@@ -149,6 +149,41 @@ async def validate_labels(board_id: int, label_ids: list[int]) -> list[Label]:
     return labels
 
 
+def is_work_label(name: str) -> bool:
+    name = name.strip().casefold()
+    return name not in {"low", "medium", "high"} and not name.startswith(("review:", "priority:"))
+
+
+def validate_card_fields(description: str | None, labels: list[Label] | None, assignees: list[User] | None) -> None:
+    if description is not None and not description.strip():
+        raise HTTPException(422, "A description is required")
+    if labels is not None and not any(is_work_label(label.name) for label in labels):
+        raise HTTPException(422, "Choose at least one work label")
+    if assignees is not None and not assignees:
+        raise HTTPException(422, "Choose at least one assignee")
+
+
+def validate_review_count(assignee_ids: set[int], reviewer_ids: set[int], minimum: int = 2) -> None:
+    if len(reviewer_ids - assignee_ids) < minimum:
+        raise HTTPException(422, "Choose at least two distinct reviewers outside the assignee list")
+
+
+async def check_card_people_update(card: Card, assignees: list[User] | None, reviewers: list[User] | None) -> None:
+    if assignees is None and reviewers is None:
+        return
+    # Serialize concurrent replacements of either relation before checking their combined state.
+    await Card.filter(id=card.id).select_for_update().get()
+    old_assignees = set(await card.assignees.all().values_list("id", flat=True))
+    old_reviewers = set(await card.reviewers.all().values_list("id", flat=True))
+    # Older cards can be repaired one person at a time, but cannot lose qualifying reviewers.
+    minimum = min(2, len(old_reviewers - old_assignees))
+    validate_review_count(
+        old_assignees if assignees is None else {u.id for u in assignees},
+        old_reviewers if reviewers is None else {u.id for u in reviewers},
+        minimum,
+    )
+
+
 async def renumber_column(column_id: int) -> None:
     """Make card positions in a column 0..n-1 in current order."""
     cards = await Card.filter(column_id=column_id).order_by("position", "id")

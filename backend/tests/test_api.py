@@ -13,6 +13,14 @@ def positions(board: dict, column_index: int) -> list[int]:
     return [c["position"] for c in board["columns"][column_index]["cards"]]
 
 
+def card_body(client, headers, board_id, title="Task"):
+    me = client.get("/api/auth/me", headers=headers).json()["id"]
+    others = [u["id"] for u in client.get("/api/users", headers=headers).json() if u["id"] != me][:2]
+    client.put(f"/api/boards/{board_id}/members", json={"user_ids": [me, *others]}, headers=headers).raise_for_status()
+    label = client.post(f"/api/boards/{board_id}/labels", json={"name": "Backend", "color": "#123456"}, headers=headers).json()
+    return {"title": title, "description": "Check the result", "label_ids": [label["id"]], "assignee_ids": [me], "reviewer_ids": others}
+
+
 def test_login_and_me(client: TestClient):
     bad = client.post("/api/auth/login", json={"email": "daniel@teamboard.local", "password": "wrong"})
     assert bad.status_code == 401
@@ -63,11 +71,10 @@ def test_card_lifecycle_and_move(client: TestClient):
 
     label = client.post(f"/api/boards/{bid}/labels", json={"name": "bug", "color": "#FF0000"}, headers=h).json()
     assert label["color"] == "#ff0000"
+    body = card_body(client, h, bid)
     ids = []
     for i in range(3):
-        r = client.post(
-            f"/api/columns/{todo}/cards", json={"title": f"card {i}", "assignee_ids": [me], "label_ids": [label["id"]]}, headers=h
-        )
+        r = client.post(f"/api/columns/{todo}/cards", json={**body, "title": f"card {i}", "label_ids": [label["id"]]}, headers=h)
         assert r.status_code == 201, r.text
         ids.append(r.json()["id"])
     board = client.get(f"/api/boards/{bid}", headers=h).json()
@@ -83,13 +90,15 @@ def test_card_lifecycle_and_move(client: TestClient):
     assert card_ids(board, 0) == [ids[1]] and card_ids(board, 1) == [ids[2], ids[0]]
     assert positions(board, 0) == [0] and positions(board, 1) == [0, 1]
 
-    # update: clear due date explicitly, replace assignees with empty set
+    # Due date is optional; a card must keep an assignee.
     r = client.patch(f"/api/cards/{ids[1]}", json={"due_date": "2026-12-01"}, headers=h)
     assert r.json()["due_date"] == "2026-12-01"
     r = client.patch(f"/api/cards/{ids[1]}", json={"title": "renamed"}, headers=h)
     assert r.json()["due_date"] == "2026-12-01" and r.json()["title"] == "renamed"  # omitted field untouched
     r = client.patch(f"/api/cards/{ids[1]}", json={"due_date": None, "assignee_ids": []}, headers=h)
-    assert r.json()["due_date"] is None and r.json()["assignees"] == []
+    assert r.status_code == 422
+    r = client.patch(f"/api/cards/{ids[1]}", json={"due_date": None}, headers=h)
+    assert r.json()["due_date"] is None and r.json()["assignees"][0]["id"] == me
     # assignee must be a board member
     outsider = client.get("/api/auth/me", headers=login(client, "peera")).json()["id"]
     assert client.patch(f"/api/cards/{ids[1]}", json={"assignee_ids": [outsider]}, headers=h).status_code == 400
@@ -134,40 +143,60 @@ def test_removed_member_is_unassigned(client: TestClient):
     other_h = login(client, "botond")
     other = client.get("/api/auth/me", headers=other_h).json()["id"]
     b = client.post("/api/boards", json={"title": "M"}, headers=h).json()
-    client.put(f"/api/boards/{b['id']}/members", json={"user_ids": [other]}, headers=h)
     col = b["columns"][0]["id"]
-    card = client.post(f"/api/columns/{col}/cards", json={"title": "x", "assignee_ids": [other]}, headers=h).json()
+    body = card_body(client, h, b["id"])
+    owner = body["assignee_ids"][0]
+    reviewers = [u["id"] for u in client.get("/api/users", headers=h).json() if u["id"] not in {owner, other}][:2]
+    client.put(f"/api/boards/{b['id']}/members", json={"user_ids": [other, *reviewers]}, headers=h)
+    card = client.post(f"/api/columns/{col}/cards", json={**body, "assignee_ids": [other], "reviewer_ids": reviewers}, headers=h).json()
     assert [u["id"] for u in card["assignees"]] == [other]
     board = client.put(f"/api/boards/{b['id']}/members", json={"user_ids": []}, headers=h).json()
     assert board["columns"][0]["cards"][0]["assignees"] == []
 
 
-def test_reviewers(client: TestClient):
+def test_card_requirements(client: TestClient):
     h = login(client, "ramtin")
-    rev_h = login(client, "andrada")
-    reviewer = client.get("/api/auth/me", headers=rev_h).json()["id"]
-    me = client.get("/api/auth/me", headers=h).json()["id"]
     b = client.post("/api/boards", json={"title": "R"}, headers=h).json()
     col = b["columns"][0]["id"]
-    # reviewer must be a member
-    assert client.post(f"/api/columns/{col}/cards", json={"title": "x", "reviewer_ids": [reviewer]}, headers=h).status_code == 400
-    client.put(f"/api/boards/{b['id']}/members", json={"user_ids": [reviewer]}, headers=h)
-    card = client.post(f"/api/columns/{col}/cards", json={"title": "x", "assignee_ids": [me], "reviewer_ids": [reviewer]}, headers=h).json()
-    assert [u["id"] for u in card["reviewers"]] == [reviewer] and [u["id"] for u in card["assignees"]] == [me]
-    # patch without reviewer_ids keeps them; explicit [] clears them
-    card = client.patch(f"/api/cards/{card['id']}", json={"title": "y"}, headers=h).json()
-    assert [u["id"] for u in card["reviewers"]] == [reviewer]
-    card = client.patch(f"/api/cards/{card['id']}", json={"reviewer_ids": [reviewer, me]}, headers=h).json()
-    assert sorted(u["id"] for u in card["reviewers"]) == sorted([reviewer, me])
-    # removing a member drops them as reviewer too
-    board = client.put(f"/api/boards/{b['id']}/members", json={"user_ids": []}, headers=h).json()
-    assert [u["id"] for u in board["columns"][0]["cards"][0]["reviewers"]] == [me]
-    card = client.patch(f"/api/cards/{card['id']}", json={"reviewer_ids": []}, headers=h).json()
-    assert card["reviewers"] == []
-    # seeded demo: the Review column card has a reviewer
-    demo = client.get("/api/boards", headers=login(client, "daniel")).json()
-    demo_board = client.get(f"/api/boards/{min(x['id'] for x in demo)}", headers=login(client, "daniel")).json()
-    assert len(demo_board["columns"][2]["cards"][0]["reviewers"]) == 1
+    body = card_body(client, h, b["id"])
+    r1, r2 = body["reviewer_ids"]
+    me = body["assignee_ids"][0]
+    endpoint = f"/api/columns/{col}/cards"
+    assert client.post(endpoint, json={"title": "Only title"}, headers=h).status_code == 422
+    for fields in (
+        {"description": "  "},
+        {"title": ""},
+        {"label_ids": []},
+        {"assignee_ids": []},
+        {"reviewer_ids": [r1]},
+        {"reviewer_ids": [r1, r1]},
+        {"reviewer_ids": [r1, me]},
+    ):
+        assert client.post(endpoint, json={**body, **fields}, headers=h).status_code == 422
+    assert client.post(endpoint, json={**body, "reviewer_ids": [r1, 999999]}, headers=h).status_code == 400
+    label = client.post(f"/api/boards/{b['id']}/labels", json={"name": "Medium", "color": "#123456"}, headers=h).json()
+    assert client.post(endpoint, json={**body, "label_ids": [label["id"]]}, headers=h).status_code == 422
+    card = client.post(endpoint, json=body, headers=h).json()
+    url = f"/api/cards/{card['id']}"
+    for fields in ({"assignee_ids": [me, r2]}, {"description": " "}, {"label_ids": []}, {"reviewer_ids": []}):
+        assert client.patch(url, json=fields, headers=h).status_code == 422
+    updated = client.patch(url, json={"title": "Edited"}, headers=h).json()
+    assert {u["id"] for u in updated["reviewers"]} == {r1, r2}
+
+
+def test_existing_card_can_be_completed_in_steps(client: TestClient):
+    h = login(client, "daniel")
+    board_id = min(b["id"] for b in client.get("/api/boards", headers=h).json())
+    board = client.get(f"/api/boards/{board_id}", headers=h).json()
+    card = board["columns"][2]["cards"][0]
+    assert len(card["reviewers"]) == 1
+    url = f"/api/cards/{card['id']}"
+    assert client.patch(url, json={"description": "Document the expected result."}, headers=h).status_code == 200
+    assignees = {person["id"] for person in card["assignees"]}
+    reviewers = [person["id"] for person in board["members"] if person["id"] not in assignees][:2]
+    assert client.patch(url, json={"reviewer_ids": reviewers[:1]}, headers=h).status_code == 200
+    assert client.patch(url, json={"reviewer_ids": reviewers}, headers=h).status_code == 200
+    assert client.patch(url, json={"reviewer_ids": reviewers[:1]}, headers=h).status_code == 422
 
 
 def test_change_password(client: TestClient):
@@ -192,10 +221,11 @@ def test_websocket_live_updates(client: TestClient):
     col = client.get(f"/api/boards/{bid}", headers=h).json()["columns"][0]["id"]
     me = client.get("/api/auth/me", headers=h).json()["id"]
 
+    body = card_body(client, h, bid, "pushed")
     with client.websocket_connect(f"/api/ws/boards/{bid}?token={token}") as ws:
         ws.send_text("ping")
         assert ws.receive_text() == "pong"
-        card = client.post(f"/api/columns/{col}/cards", json={"title": "pushed"}, headers=h).json()
+        card = client.post(f"/api/columns/{col}/cards", json=body, headers=h).json()
         msg = json.loads(ws.receive_text())
         assert msg == {"type": "board.updated", "board_id": bid, "event": "card.created", "actor_id": me, "entity_id": card["id"]}
         client.post(f"/api/cards/{card['id']}/move", json={"column_id": col, "position": 0}, headers=h)

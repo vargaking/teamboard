@@ -191,6 +191,7 @@ async def _run() -> None:
                 todo, doing = board["columns"][0], board["columns"][1]
                 member_ids = [m["id"] for m in board["members"]]
 
+                others = [uid for uid in member_ids if uid != daniel_id]
                 created = _data(
                     await mcp.call_tool(
                         "create_card",
@@ -199,7 +200,9 @@ async def _run() -> None:
                             "title": "From Claude",
                             "description": "via MCP",
                             "due_date": "2026-12-24",
-                            "assignee_ids": member_ids[:2],
+                            "assignee_ids": others[:2],
+                            "reviewer_ids": others[2:4],
+                            "label_ids": [board["labels"][0]["id"]],
                         },
                     )
                 )
@@ -209,9 +212,11 @@ async def _run() -> None:
                 comment = _data(await mcp.call_tool("add_comment", {"card_id": created["id"], "body": "hello from claude"}))
                 assert comment["author"] == "Dániel Gergely"
                 updated = _data(
-                    await mcp.call_tool("update_card", {"card_id": created["id"], "clear_due_date": True, "reviewer_ids": [daniel_id]})
+                    await mcp.call_tool(
+                        "update_card", {"card_id": created["id"], "clear_due_date": True, "reviewer_ids": [daniel_id, others[2]]}
+                    )
                 )
-                assert updated["due_date"] is None and [r["id"] for r in updated["reviewers"]] == [daniel_id]
+                assert updated["due_date"] is None and {r["id"] for r in updated["reviewers"]} == {daniel_id, others[2]}
                 found = _data(await mcp.call_tool("search_cards", {"text": "from claude", "reviewer": "me"}))
                 assert [c["id"] for c in found] == [created["id"]] and found[0]["comment_count"] == 1
                 overdue = _data(await mcp.call_tool("search_cards", {"overdue": True}))
@@ -221,9 +226,19 @@ async def _run() -> None:
                 col = _data(await mcp.call_tool("create_column", {"board_id": board["id"], "title": "Blocked"}))
                 assert col["position"] == 4
                 # invalid input surfaces as a tool error, not a crash
-                err = await mcp.call_tool("create_card", {"column_id": todo["id"], "title": "x", "due_date": "tomorrow"})
+                card_args = {
+                    "column_id": todo["id"],
+                    "title": "x",
+                    "description": "check",
+                    "assignee_ids": others[:1],
+                    "reviewer_ids": others[1:3],
+                    "label_ids": [board["labels"][0]["id"]],
+                }
+                err = await mcp.call_tool("create_card", {**card_args, "due_date": "tomorrow"})
                 assert err.is_error and "YYYY-MM-DD" in err.content[0].text
-                err = await mcp.call_tool("create_card", {"column_id": 999999, "title": "x"})
+                err = await mcp.call_tool("create_card", {**card_args, "reviewer_ids": others[:2]})
+                assert err.is_error and "outside the assignee list" in err.content[0].text
+                err = await mcp.call_tool("create_card", {**card_args, "column_id": 999999})
                 assert err.is_error and "Column not found" in err.content[0].text
 
             # REST sees exactly what MCP did (same services, same DB)
