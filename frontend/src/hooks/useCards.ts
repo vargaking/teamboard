@@ -1,14 +1,14 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import * as cardsApi from '../api/cards';
-import type { BoardDetail, CardUpdate } from '../api/types';
+import type { BoardDetail, CardCreate, CardUpdate } from '../api/types';
 import { applyCardUpdate, removeCardFromBoard, replaceCardInBoard } from '../utils/board';
 import { queryKeys } from './queryKeys';
 
 export function useCreateCard(boardId: number) {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: ({ columnId, title }: { columnId: number; title: string }) =>
-      cardsApi.createCard(columnId, { title }),
+    mutationFn: ({ columnId, body }: { columnId: number; body: CardCreate }) =>
+      cardsApi.createCard(columnId, body),
     onSuccess: (card) => {
       queryClient.setQueryData<BoardDetail>(queryKeys.board(boardId), (old) =>
         old

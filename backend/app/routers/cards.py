@@ -7,13 +7,16 @@ from app.realtime import hub
 from app.schemas import BoardDetail, CardCreate, CardMove, CardOut, CardUpdate, CommentCreate, CommentOut
 from app.services import (
     board_detail_or_404,
+    check_card_people_update,
     get_card_checked,
     get_column_checked,
     load_card,
     renumber_column,
     serialize_card,
     validate_assignees,
+    validate_card_fields,
     validate_labels,
+    validate_review_count,
 )
 
 router = APIRouter(tags=["cards"])
@@ -32,6 +35,8 @@ async def create_card(column_id: int, payload: CardCreate, user: CurrentUser) ->
     assignees = await validate_assignees(board_id, payload.assignee_ids)
     reviewers = await validate_assignees(board_id, payload.reviewer_ids)
     labels = await validate_labels(board_id, payload.label_ids)
+    validate_card_fields(payload.description, labels, assignees)
+    validate_review_count(set(payload.assignee_ids), set(payload.reviewer_ids))
     async with in_transaction():
         position = await Card.filter(column_id=column_id).count()
         card = await Card.create(
@@ -69,7 +74,9 @@ async def update_card(card_id: int, payload: CardUpdate, user: CurrentUser) -> C
     assignees = await validate_assignees(board_id, payload.assignee_ids) if payload.assignee_ids is not None else None
     reviewers = await validate_assignees(board_id, payload.reviewer_ids) if payload.reviewer_ids is not None else None
     labels = await validate_labels(board_id, payload.label_ids) if payload.label_ids is not None else None
+    validate_card_fields(payload.description, labels, assignees)
     async with in_transaction():
+        await check_card_people_update(card, assignees, reviewers)
         if changed:
             await card.save(update_fields=[*changed, "updated_at"])
         if assignees is not None:

@@ -1,3 +1,4 @@
+import { missingCardFields } from './cardRequirements.ts';
 import type { BoardDetail, CardCreate } from '../api/types';
 
 const headings = ['Title', 'Description', 'Column', 'Due date', 'Labels', 'Assignees', 'Reviewers'] as const;
@@ -125,6 +126,8 @@ function cardInput(row: CsvRow, board: BoardDetail, fallback: number | undefined
     label_ids: [...new Set(readList(row.Labels).map(v => lookup(v, board.labels, l => [l.name], 'label')))],
     assignee_ids: members(row.Assignees), reviewer_ids: members(row.Reviewers),
   };
+  const missing = missingCardFields(body, board.labels);
+  if (missing.length) throw new Error('Required: ' + missing.join(', '));
   return { columnId, body };
 }
 

@@ -45,7 +45,12 @@ type Token = { access_token: string; token_type: "bearer"; user: User };
 - `DELETE /api/columns/{id}` → 204 (deletes its cards too)
 
 ## Cards
-- `POST   /api/columns/{id}/cards` body `{title, description?, due_date?, assignee_ids?, reviewer_ids?, label_ids?}` → `Card` (appended at the end of the column; assignees and reviewers must be board members)
+
+New cards in every column require a nonblank title and description, a work label, an assignee, and two distinct board members
+outside the assignee list as reviewers. Low/Medium/High, Priority:… and Review:… labels can accompany a work label.
+The same checks apply to CSV rows. Older cards can be completed incrementally. Due dates and MR links are optional.
+
+- `POST   /api/columns/{id}/cards` body `{title, description, assignee_ids, reviewer_ids, label_ids, due_date?}` → `Card` (appended at the end of the column; assignees and reviewers must be board members)
 - `PATCH  /api/cards/{id}` body `{title?, description?, due_date?, assignee_ids?, reviewer_ids?, label_ids?}` → `Card` (send `due_date: null` to clear; `assignee_ids`/`reviewer_ids`/`label_ids` replace the full set)
 - `POST   /api/cards/{id}/move` body `{column_id, position}` → `BoardDetail` (`position` = target index within the destination column, 0-based; positions of all affected cards are renumbered)
 - `DELETE /api/cards/{id}` → 204

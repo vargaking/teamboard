@@ -97,8 +97,9 @@ export function BoardCsvImportModal({ board, onClose }: Props) {
       </Space>}>
       <Space direction="vertical" size="middle" style={{ width: '100%' }}>
         <Typography.Text>
-          Use one task per row with a Title heading. Optional headings are Description, Column, Due date
-          (YYYY-MM-DD), Labels, Assignees and Reviewers. Separate multiple names or emails with semicolons.
+          Each new task needs Title, Description, Labels (include a work label), Assignees and Reviewers.
+          Choose at least two distinct reviewers outside the assignee list. Separate multiple names or emails
+          with semicolons. Column and Due date (YYYY-MM-DD) are optional.
         </Typography.Text>
         <input aria-label="CSV file" type="file" accept=".csv,text/csv" disabled={busy}
           onChange={e => void load(e.target.files?.[0])} />

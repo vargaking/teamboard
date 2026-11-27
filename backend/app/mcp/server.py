@@ -22,6 +22,7 @@ from app.realtime import hub
 from app.schemas import BoardDetail, CardOut
 from app.services import (
     board_detail_or_404,
+    check_card_people_update,
     get_card_checked,
     get_column_checked,
     load_card,
@@ -29,7 +30,9 @@ from app.services import (
     require_board_access,
     serialize_card,
     validate_assignees,
+    validate_card_fields,
     validate_labels,
+    validate_review_count,
 )
 
 
@@ -202,24 +205,26 @@ def build_server() -> MCPServer:
 
     # ---------- write ----------
     @server.tool(
-        description="Create a card at the end of a column. Assignees/reviewers must be board members; labels must belong to the board."
+        description="Add a card with a description, work label, assignee and two distinct board reviewers outside the assignee list."
     )
     async def create_card(
         column_id: int,
         title: str,
-        description: str = "",
+        description: str,
+        assignee_ids: list[int],
+        reviewer_ids: list[int],
+        label_ids: list[int],
         due_date: Annotated[str | None, Field(description="YYYY-MM-DD")] = None,
-        assignee_ids: list[int] | None = None,
-        reviewer_ids: list[int] | None = None,
-        label_ids: list[int] | None = None,
     ) -> dict[str, Any]:
         user = await current_user()
         try:
             column = await get_column_checked(user, column_id)
             board_id: int = column.board_id  # type: ignore[attr-defined]
-            assignees = await validate_assignees(board_id, assignee_ids or [])
-            reviewers = await validate_assignees(board_id, reviewer_ids or [])
-            labels = await validate_labels(board_id, label_ids or [])
+            assignees = await validate_assignees(board_id, assignee_ids)
+            reviewers = await validate_assignees(board_id, reviewer_ids)
+            labels = await validate_labels(board_id, label_ids)
+            validate_card_fields(description, labels, assignees)
+            validate_review_count(set(assignee_ids), set(reviewer_ids))
         except HTTPException as exc:
             raise _guard(exc) from exc
         if not title.strip():
@@ -264,6 +269,7 @@ def build_server() -> MCPServer:
             assignees = await validate_assignees(board_id, assignee_ids) if assignee_ids is not None else None
             reviewers = await validate_assignees(board_id, reviewer_ids) if reviewer_ids is not None else None
             labels = await validate_labels(board_id, label_ids) if label_ids is not None else None
+            validate_card_fields(description, labels, assignees)
         except HTTPException as exc:
             raise _guard(exc) from exc
         changed: list[str] = []
@@ -282,6 +288,10 @@ def build_server() -> MCPServer:
             card.due_date = _parse_date(due_date)
             changed.append("due_date")
         async with in_transaction():
+            try:
+                await check_card_people_update(card, assignees, reviewers)
+            except HTTPException as exc:
+                raise _guard(exc) from exc
             if changed:
                 await card.save(update_fields=[*changed, "updated_at"])
             for relation, values in ((card.assignees, assignees), (card.reviewers, reviewers), (card.labels, labels)):

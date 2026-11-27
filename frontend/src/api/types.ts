@@ -95,11 +95,11 @@ export type ColumnOrder = { column_ids: number[] };
 
 export type CardCreate = {
   title: string;
-  description?: string;
+  description: string;
   due_date?: string | null;
-  assignee_ids?: number[];
-  reviewer_ids?: number[];
-  label_ids?: number[];
+  assignee_ids: number[];
+  reviewer_ids: number[];
+  label_ids: number[];
 };
 export type CardUpdate = {
   title?: string;
