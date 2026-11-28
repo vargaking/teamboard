@@ -332,11 +332,91 @@ body {
   max-width: 720px;
 }
 
+.board-views {
+  display: flex;
+  gap: 4px;
+  flex-wrap: wrap;
+  margin-top: 12px;
+}
+
+.board-view-link {
+  padding: 6px 12px;
+  border-radius: 6px;
+  color: var(--text);
+}
+
+.board-view-link:hover {
+  background: var(--hover-bg);
+  color: var(--text);
+}
+
+.board-view-link[aria-current='page'] {
+  background: var(--row-active-bg);
+  color: var(--brand);
+  font-weight: 600;
+}
+
 .board-filters {
   display: flex;
   gap: 8px;
   flex-wrap: wrap;
   margin-top: 12px;
+}
+
+.personal-board {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+  padding: 16px 20px 24px;
+}
+
+.personal-board-group {
+  max-width: 760px;
+  margin: 0 auto 20px;
+}
+
+.personal-board-group h2 {
+  margin: 0 0 8px;
+  font-size: 15px;
+}
+
+.personal-board-group ul {
+  display: grid;
+  gap: 4px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.personal-board-card {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 4px 16px;
+  width: 100%;
+  padding: 8px 12px;
+  border: 1px solid var(--card-border);
+  border-radius: 6px;
+  background: var(--card-bg);
+  color: var(--text);
+  font: inherit;
+  text-align: start;
+  overflow-wrap: anywhere;
+  cursor: pointer;
+}
+
+.personal-board-card:hover {
+  border-color: var(--card-border-hover);
+}
+
+.personal-board-card span {
+  min-width: 0;
+}
+
+.personal-board-card time {
+  color: var(--text-muted);
+  font-size: 12px;
 }
 
 .editable-text.is-editable {
