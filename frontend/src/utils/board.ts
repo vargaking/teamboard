@@ -118,6 +118,39 @@ export function isDoneColumn(title: string): boolean {
   return DONE_TITLE.test(title);
 }
 
+export type BoardViewMode = 'board' | 'my-work' | 'my-reviews';
+
+export function getBoardViewMode(value: string | null): BoardViewMode {
+  return value === 'my-work' || value === 'my-reviews' ? value : 'board';
+}
+
+const WORK_COLUMN_ORDER = new Map([
+  ['in progress', 0],
+  ['to do', 1],
+]);
+
+export function personalCardGroups(
+  columns: Column[],
+  view: Exclude<BoardViewMode, 'board'>,
+  userId: number,
+  search: string,
+): Column[] {
+  const needle = search.trim().toLowerCase();
+  const role = view === 'my-work' ? 'assignees' : 'reviewers';
+  const groups = columns.flatMap((column) => {
+    if (isDoneColumn(column.title)) return [];
+    const title = column.title.trim().toLowerCase().replace(/\s+/g, ' ');
+    if (view === 'my-reviews' && title !== 'review' && title !== 'needs review') return [];
+
+    const cards = column.cards.filter(
+      (card) => card[role].some((person) => person.id === userId) && card.title.toLowerCase().includes(needle),
+    );
+    return cards.length ? [{ column: { ...column, cards }, order: WORK_COLUMN_ORDER.get(title) ?? 2 }] : [];
+  });
+
+  return groups.sort((a, b) => a.order - b.order).map(({ column }) => column);
+}
+
 /**
  * Ids of the board's "done" columns: every column whose title matches isDoneColumn; if none
  * matches, the last column. Used by both overdue highlighting and review counts so they agree.

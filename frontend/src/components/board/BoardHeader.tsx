@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { App, Button, Dropdown, Input, Select, Space, Typography } from 'antd';
 import { DeleteOutlined, MoreOutlined, SearchOutlined, TagsOutlined, TeamOutlined } from '@ant-design/icons';
 import type { BoardDetail } from '../../api/types';
@@ -11,7 +11,7 @@ import { LiveIndicator } from '../LiveIndicator';
 import { UserAvatar, UserAvatarGroup } from '../UserAvatar';
 import { BoardCsvImportModal } from './BoardCsvImportModal';
 import { exportBoardCsv } from '../../utils/boardCsv';
-import type { ReviewCount } from '../../utils/board';
+import type { BoardViewMode, ReviewCount } from '../../utils/board';
 import { EditableText } from './EditableText';
 import { LabelsModal } from './LabelsModal';
 import { MembersModal } from './MembersModal';
@@ -19,9 +19,16 @@ import { MembersModal } from './MembersModal';
 /** People filter value: 'all' | 'me' | 'none' (nobody in that role) | user id. */
 export type PersonFilter = 'all' | 'me' | 'none' | number;
 
+const BOARD_VIEWS: { key: BoardViewMode; label: string }[] = [
+  { key: 'board', label: 'Board' },
+  { key: 'my-work', label: 'My work' },
+  { key: 'my-reviews', label: 'My reviews' },
+];
+
 type Props = {
   board: BoardDetail;
   liveStatus: LiveStatus;
+  view: BoardViewMode;
   assigneeFilter: PersonFilter;
   onAssigneeFilterChange: (value: PersonFilter) => void;
   reviewerFilter: PersonFilter;
@@ -85,6 +92,7 @@ function PersonFilterSelect({
 export function BoardHeader({
   board,
   liveStatus,
+  view,
   assigneeFilter,
   onAssigneeFilterChange,
   reviewerFilter,
@@ -95,6 +103,7 @@ export function BoardHeader({
 }: Props) {
   const user = useCurrentUser();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const { message, modal } = App.useApp();
   const updateBoard = useUpdateBoard(board.id);
   const deleteBoard = useDeleteBoard();
@@ -188,29 +197,52 @@ export function BoardHeader({
           </Dropdown>
         </Space>
       </div>
+      <nav className="board-views" aria-label="Board views">
+        {BOARD_VIEWS.map(({ key, label }) => {
+          const params = new URLSearchParams(searchParams);
+          if (key === 'board') params.delete('view');
+          else params.set('view', key);
+
+          return (
+            <Link
+              key={key}
+              to={{ search: params.toString() }}
+              className="board-view-link"
+              aria-current={key === view ? 'page' : undefined}
+            >
+              {label}
+            </Link>
+          );
+        })}
+      </nav>
       <div className="board-filters">
-        <PersonFilterSelect
-          board={board}
-          currentUserId={user.id}
-          value={assigneeFilter}
-          onChange={onAssigneeFilterChange}
-          ariaLabel="Filter by assignee"
-          allLabel="Any assignee"
-          meLabel="Assigned to me"
-          noneLabel="Unassigned"
-        />
-        <PersonFilterSelect
-          board={board}
-          currentUserId={user.id}
-          value={reviewerFilter}
-          onChange={onReviewerFilterChange}
-          ariaLabel="Filter by reviewer"
-          allLabel="Any reviewer"
-          meLabel="Reviewed by me"
-          noneLabel="No reviewer"
-        />
+        {view === 'board' && (
+          <>
+            <PersonFilterSelect
+              board={board}
+              currentUserId={user.id}
+              value={assigneeFilter}
+              onChange={onAssigneeFilterChange}
+              ariaLabel="Filter by assignee"
+              allLabel="Any assignee"
+              meLabel="Assigned to me"
+              noneLabel="Unassigned"
+            />
+            <PersonFilterSelect
+              board={board}
+              currentUserId={user.id}
+              value={reviewerFilter}
+              onChange={onReviewerFilterChange}
+              ariaLabel="Filter by reviewer"
+              allLabel="Any reviewer"
+              meLabel="Reviewed by me"
+              noneLabel="No reviewer"
+            />
+          </>
+        )}
         <Input
           allowClear
+          aria-label="Search cards"
           prefix={<SearchOutlined />}
           placeholder="Search cards"
           value={search}
